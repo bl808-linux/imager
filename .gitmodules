@@ -1,0 +1,9 @@
+[submodule "u-boot"]
+	path = u-boot
+	url = git@github.com:bl808-linux/u-boot.git
+[submodule "firmware"]
+	path = firmware
+	url = git@github.com:bl808-linux/firmware.git
+[submodule "linux"]
+	path = linux
+	url = git@github.com:bl808-linux/linux.git
