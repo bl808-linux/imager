@@ -7,3 +7,6 @@
 [submodule "linux"]
 	path = linux
 	url = git@github.com:bl808-linux/linux.git
+[submodule "opensbi"]
+	path = opensbi
+	url = https://github.com/riscv-software-src/opensbi.git
