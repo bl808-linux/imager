@@ -1,0 +1,2 @@
+# Shared private-test VID/PID; also match our product string.
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="1209", ATTR{idProduct}=="0001", ATTR{product}=="BL808 M0 DFU", MODE="0660", GROUP="plugdev", TAG+="uaccess"
