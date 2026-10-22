@@ -1,0 +1,3 @@
+CONFIG_VIDEO=n
+CONFIG_PCI=n
+
