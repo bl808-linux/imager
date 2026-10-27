@@ -1,9 +1,11 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 from urllib.request import urlopen
@@ -27,6 +29,98 @@ def firmware(args: argparse.Namespace) -> None:
             ["riscv64-unknown-elf-objcopy", "-O", "binary", str(elf), str(elf.with_suffix(".bin"))],
             check=True,
         )
+
+
+def boot_dtb() -> Path:
+    root = Path(__file__).resolve().parents[2]
+    output = root / "out/bl808-m1s.dtb"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["dtc", "-I", "dts", "-O", "dtb", "-o", str(output), str(root / "bl808-m1s.dts")],
+        check=True,
+    )
+    return output
+
+
+def opensbi(args: argparse.Namespace) -> None:
+    root = Path(__file__).resolve().parents[2]
+    source = root / "opensbi"
+    output = root / "out/opensbi"
+    dtb = boot_dtb()
+    config = output / "platform/generic/kconfig/.config"
+    config.parent.mkdir(parents=True, exist_ok=True)
+    env = os.environ | {
+        "OPENSBI_SRC_DIR": str(source),
+        "OPENSBI_PLATFORM": "generic",
+        "OPENSBI_PLATFORM_SRC_DIR": str(source / "platform/generic"),
+        "KCONFIG_CONFIG": str(config),
+        "PYTHONDONTWRITEBYTECODE": "1",
+    }
+    subprocess.run(
+        [sys.executable, str(source / "scripts/Kconfiglib/defconfig.py"),
+         "--kconfig", str(source / "Kconfig"), str(root / "configs/opensbi")],
+        cwd=source, env=env, check=True,
+    )
+
+    def cells(node, prop):
+        value = subprocess.check_output(["fdtget", "-t", "x", str(dtb), node, prop], text=True)
+        return [int(cell, 16) for cell in value.split()]
+
+    (base,) = cells("/chosen/opensbi-config", "opensbi-base")
+    (size,) = cells("/chosen/opensbi-config", "opensbi-size")
+    next_address, _ = cells("/memory@50000000", "reg")
+    if size < 0x80000:
+        raise ValueError("OpenSBI reservation must be at least 512 KiB")
+    # OpenSBI does not track changes to address defines as dependencies.
+    for name in ("fw_jump.bin", "fw_jump.elf", "fw_jump.o", "fw_jump.elf.ld"):
+        (output / "platform/generic/firmware" / name).unlink(missing_ok=True)
+    subprocess.run(
+        ["make", f"-j{min(os.cpu_count() or 1, 8)}", f"O={output}", "PLATFORM=generic",
+         "PLATFORM_RISCV_XLEN=64", "PLATFORM_RISCV_ISA=rv64gc", "PLATFORM_RISCV_ABI=lp64d",
+         "CROSS_COMPILE=riscv64-linux-gnu-", "FW_DYNAMIC=n", "FW_PAYLOAD=n", "FW_JUMP=y",
+         f"FW_TEXT_START={base:#x}", f"FW_JUMP_ADDR={next_address:#x}", "FW_JUMP_FDT_OFFSET="],
+        cwd=source, check=True,
+    )
+    print(f"OpenSBI firmware: {output / 'platform/generic/firmware/fw_jump.bin'}")
+
+
+def uboot(args: argparse.Namespace) -> None:
+    root = Path(__file__).resolve().parents[2]
+    source = root / "u-boot"
+    output = root / "out/u-boot"
+    dtb = boot_dtb()
+    make = ["make", "ARCH=riscv", f"O={output}", "CROSS_COMPILE=riscv64-linux-gnu-",
+            f"EXT_DTB={dtb}"]
+    subprocess.run([*make, "m1s_d0_defconfig"], cwd=source, check=True)
+    subprocess.run(
+        ["sh", str(source / "scripts/kconfig/merge_config.sh"), "-m", "-O", str(output),
+         str(output / ".config"), str(root / "configs/u-boot")],
+        cwd=output, check=True,
+    )
+    subprocess.run([*make, "olddefconfig"], cwd=source, check=True)
+    subprocess.run([*make, f"-j{min(os.cpu_count() or 1, 8)}"], cwd=source, check=True)
+    print(f"U-Boot image: {output / 'u-boot.bin'}")
+
+
+def linux(args: argparse.Namespace) -> None:
+    root = Path(__file__).resolve().parents[2]
+    source = root / "linux"
+    output = root / "out/linux"
+    output.mkdir(parents=True, exist_ok=True)
+    make = ["make", "ARCH=riscv", "LLVM=1", f"O={output}"]
+    subprocess.run([*make, "defconfig"], cwd=source, check=True)
+    subprocess.run(
+        ["sh", str(source / "scripts/kconfig/merge_config.sh"), "-m", "-O", str(output),
+         str(output / ".config"), str(root / "configs/linux")],
+        cwd=output, check=True,
+    )
+    subprocess.run([*make, "olddefconfig"], cwd=source, check=True)
+    subprocess.run(
+        [*make, f"-j{min(os.cpu_count() or 1, 8)}", "Image.gz",
+         "bouffalolab/bl808-sipeed-m1s-dock.dtb"],
+        cwd=source, check=True,
+    )
+    print(f"Linux kernel and board DTB: {output / 'arch/riscv/boot'}")
 
 
 def debian(args: argparse.Namespace) -> None:
@@ -152,4 +246,7 @@ def register(subparsers) -> None:
     parser.set_defaults(parser=parser)
     commands = parser.add_subparsers(dest="target")
     commands.add_parser("firmware").set_defaults(func=firmware)
+    commands.add_parser("opensbi").set_defaults(func=opensbi)
+    commands.add_parser("u-boot").set_defaults(func=uboot)
+    commands.add_parser("linux").set_defaults(func=linux)
     commands.add_parser("debian").set_defaults(func=debian)
