@@ -38,8 +38,8 @@ impl SerialOps for Hardware {
         fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
         fn console_write(&self,_:&Port<'_>,_:&[u8]) {}
     }''', 'lifetime'),
-    (r'''fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
-    (r'''fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+    (r'''fn escape(port:&Port<'_>)->&'static Device {port.device()}''', 'lifetime'),
+    (r'''fn escape(port:&LockedPort<'_>)->&'static Device {port.device()}''', 'lifetime'),
     (r'''fn relock(port:&Port<'_>) {port.with_lock(|_|());}''', 'private'),
     (r'''fn emergency(port:&Port<'_>) {port.with_console_access(||());}''', 'private'),
     (r'''fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}''', 'NonZero'),
