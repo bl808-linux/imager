@@ -2,6 +2,8 @@
 
 Build the images with `uv run imager`.
 
+- [Rust UART TTY and IRQ validation](experiments/rust-uart-tty/README.md)
+
 - [Rust console v2 review integration](experiments/rust-console-v2-review/README.md)
 
 For a new board, connect the UART USB port, enter ROM Flash Mode (BOOT + RST), and install M0 once:
