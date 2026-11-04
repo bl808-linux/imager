@@ -1,0 +1,10 @@
+All source changes committed before these checks.
+Submission: 9f25c03880df (b4/rust-bl808-console)
+Validation: d87f2e4eb470 (validation/rust-bl808-console-v2)
+Minimum build: rustup run 1.85.0 make -C out/linux-console-v2-validation O=$PWD/out/linux-console-kunit-build ARCH=riscv LLVM=-19 RUSTFMT="$(rustup which --toolchain stable rustfmt)" -j4 W=1 Image.gz bouffalolab/bl808-sipeed-m1s-dock.dtb
+Stable lint: rustup run stable make -C out/linux-console-v2-validation O=$PWD/out/console-v2-review/clippy ARCH=riscv LLVM=-19 CLIPPY=1 -j2 rust/kernel.o drivers/tty/serial/bflb_uart.o
+Stable format: rustup run stable make -C out/linux-console-v2-validation O=$PWD/out/console-v2-review/clippy ARCH=riscv LLVM=-19 rustfmtcheck
+Binding: make -C out/linux-console-dts O=$PWD/out/console-dts-v2/submission ARCH=riscv LLVM=-19 DT_SCHEMA_FILES=serial/bouffalolab,bl808-uart.yaml dt_binding_check
+Submission DTB: make -C out/linux-console-dts O=$PWD/out/console-dts-v2/submission ARCH=riscv LLVM=-19 CHECK_DTBS=y bouffalolab/bl808-sipeed-m1s-dock.dtb
+Patches: PATH=$PWD/out/dtschema/bin:$PATH b4 prep --check (in out/linux-console)
+Python: uv run pytest tests (tests/ avoids unrelated nested kernel/Python test collections)

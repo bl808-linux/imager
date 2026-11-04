@@ -1,0 +1,1062 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/kwang/Documents/imager
+configfile: pyproject.toml
+collected 33 items
+
+tests/test_debian.py ..                                                  [  6%]
+tests/test_sd.py ......                                                  [ 24%]
+tests/test_sd_cli.py ............                                        [ 60%]
+tests/test_serial_lifetime.py FFFFFFFF....F                              [100%]
+
+=================================== FAILURES ===================================
+___________ test_actual_registration_rolls_back_after_devres_failure ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_actual_registration_rolls0')
+
+    def test_actual_registration_rolls_back_after_devres_failure(tmp_path):
+        if not TREE.is_dir():
+            pytest.skip('optional console worktree is absent')
+        source = (TREE / 'rust/kernel/serial.rs').read_text()
+        register = function(source, 'pub fn register_port<')
+        destructor = function(source, 'impl<T: SerialOps> Drop for Registration<T>')
+        setup = r'''
+    #![allow(dead_code, non_camel_case_types)]
+    use std::{cell::{UnsafeCell, RefCell}, marker::PhantomData, pin::Pin, sync::{Arc,atomic::{AtomicBool,AtomicUsize,Ordering}}};
+    static ACTIVE: AtomicBool=AtomicBool::new(false);
+    static FAIL_ADD: AtomicBool=AtomicBool::new(false);
+    static FAIL_ALLOC: AtomicBool=AtomicBool::new(false);
+    static FAIL_DEVRES: AtomicBool=AtomicBool::new(false);
+    static ADDS: AtomicUsize=AtomicUsize::new(0);
+    static REMOVES: AtomicUsize=AtomicUsize::new(0);
+    static DROPS: AtomicUsize=AtomicUsize::new(0);
+    const GFP_KERNEL:u32=0;
+    #[derive(Debug)] struct Error;
+    const EINVAL:Error=Error;
+    type Result<T=()> = std::result::Result<T,Error>;
+    trait SerialOps:'static {}
+    trait PinInit<T,E> {fn make(self)->std::result::Result<T,E>;}
+    impl<T,E> PinInit<T,E> for std::result::Result<T,E> {fn make(self)->Self {self}}
+    struct Opaque<T>(UnsafeCell<T>);
+    impl<T> Opaque<T> {fn get(&self)->*mut T {self.0.get()}}
+    struct Driver<T> {inner:Opaque<bindings::uart_driver>,marker:PhantomData<T>}
+    struct Bound;
+    struct Device<T>(PhantomData<T>);
+    struct PortConfig {line:u32}
+    struct PortData<T> {driver:Arc<Driver<T>>,inner:Opaque<bindings::uart_port>,_data:T}
+    impl<T> PortData<T> {
+        fn new(driver:Arc<Driver<T>>,_device:&Device<Bound>,_cfg:PortConfig,data:impl PinInit<T,Error>)->Result<Self> {
+            Ok(Self {driver,inner:Opaque(UnsafeCell::new(bindings::uart_port)),_data:data.make()?})
+        }
+    }
+    struct KBox;
+    impl KBox {
+        fn pin_init<T>(data:Result<T>,_:u32)->Result<Pin<Box<T>>> {
+            if FAIL_ALLOC.load(Ordering::SeqCst) {return Err(Error);}
+            Ok(Box::pin(data?))
+        }
+    }
+    fn to_result(value:i32)->Result {if value<0 {Err(Error)} else {Ok(())}}
+    mod bindings {
+        use super::*;
+        pub struct uart_driver {pub nr:i32}
+        pub struct uart_port;
+        pub unsafe fn uart_add_one_port(_: *mut uart_driver,_:*mut uart_port)->i32 {
+            ADDS.fetch_add(1,Ordering::SeqCst);
+            if FAIL_ADD.load(Ordering::SeqCst) {return -22;}
+            assert!(!ACTIVE.swap(true,Ordering::SeqCst));0
+        }
+        pub unsafe fn uart_remove_one_port(_: *mut uart_driver,_:*mut uart_port) {
+            assert!(ACTIVE.swap(false,Ordering::SeqCst));REMOVES.fetch_add(1,Ordering::SeqCst);
+        }
+    }
+    thread_local! {static RESOURCE:RefCell<Option<Box<dyn std::any::Any>>>=RefCell::new(None);}
+    mod devres {
+        use super::*;
+        pub fn register<T:'static>(_:&Device<Bound>,data:T,_:u32)->Result {
+            if FAIL_DEVRES.load(Ordering::SeqCst) {return Err(Error);}
+            RESOURCE.with(|r| {assert!(r.borrow().is_none());*r.borrow_mut()=Some(Box::new(data));});Ok(())
+        }
+    }
+    struct Registration<T:SerialOps> {port:Pin<Box<PortData<T>>>}
+    struct Data;
+    impl SerialOps for Data {}
+    impl Drop for Data {
+        fn drop(&mut self) {assert!(!ACTIVE.load(Ordering::SeqCst),"data freed while C callbacks remained registered");DROPS.fetch_add(1,Ordering::SeqCst);}
+    }
+    '''
+        cases = r'''
+    fn main() {
+        let device=Device(PhantomData);
+        for mode in 0..5 {
+            ADDS.store(0,Ordering::SeqCst);REMOVES.store(0,Ordering::SeqCst);DROPS.store(0,Ordering::SeqCst);
+            FAIL_ALLOC.store(mode==1,Ordering::SeqCst);FAIL_ADD.store(mode==2,Ordering::SeqCst);FAIL_DEVRES.store(mode==3,Ordering::SeqCst);
+            let driver=Arc::new(Driver {inner:Opaque(UnsafeCell::new(bindings::uart_driver {nr:4})),marker:PhantomData});
+            let result=register_port(driver,&device,PortConfig {line:if mode==4 {4} else {3}},Ok(Data));
+            if mode==0 {
+                assert!(result.is_ok());assert!(ACTIVE.load(Ordering::SeqCst));assert_eq!(DROPS.load(Ordering::SeqCst),0);
+                RESOURCE.with(|r| drop(r.borrow_mut().take()));
+            } else {assert!(result.is_err());}
+            assert!(!ACTIVE.load(Ordering::SeqCst));assert_eq!(DROPS.load(Ordering::SeqCst),1);
+            assert_eq!(ADDS.load(Ordering::SeqCst),if mode==1 || mode==4 {0} else {1});
+            assert_eq!(REMOVES.load(Ordering::SeqCst),if mode==0 || mode==3 {1} else {0});
+        }
+    }
+    '''
+        program = tmp_path / 'registration.rs'
+        program.write_text(setup + register + '\n' + destructor + cases)
+        executable = tmp_path / 'registration'
+>       subprocess.run([shutil.which('rustc'), '--edition=2021', str(program), '-o', str(executable)], check=True)
+
+tests/test_serial_lifetime.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['/usr/bin/rustc', '--edition=2021', '/tmp/pytest-of-kwang/pytest-0/test_actual_registration_rolls0/registration.rs', '-o', '/tmp/pytest-of-kwang/pytest-0/test_actual_registration_rolls0/registration'],)
+kwargs = {}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/usr/bin/rustc', '--edition=2021', '/tmp/pytest-of-kwang/pytest-0/test_actual_registration_rolls0/registration.rs', '-o', '/tmp/pytest-of-kwang/pytest-0/test_actual_registration_rolls0/registration']' returned non-zero exit status 1.
+
+/usr/lib/python3.13/subprocess.py:577: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+error[E0609]: no field `config` on type `Arc<Driver<T>>`
+  --> /tmp/pytest-of-kwang/pytest-0/test_actual_registration_rolls0/registration.rs:71:30
+   |
+71 |     if config.line >= driver.config.ports {
+   |                              ^^^^^^ unknown field
+   |
+   = note: available fields are: `inner`, `marker`
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0609`.
+_ test_real_kernel_api_rejects_borrowed_or_escaping_state[fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {\n        serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))\n    }-None] _
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b0')
+body = 'fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {\n        serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))\n    }'
+error = None
+
+    @pytest.mark.parametrize(('body', 'error'), [
+        (r'''fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+            serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))
+        }''', None),
+        (r'''struct Borrowed<'a>(&'a u32);
+        impl SerialOps for Borrowed<'_> {
+            fn tx_empty(&self,_:&Port<'_>)->bool {true}
+            fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+            fn console_write(&self,_:&Port<'_>,_:&[u8]) {}
+        }''', 'lifetime'),
+        (r'''fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn relock(port:&Port<'_>) {port.with_lock(|_|());}''', 'private'),
+        (r'''fn emergency(port:&Port<'_>) {port.with_console_access(||());}''', 'private'),
+        (r'''fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}''', 'NonZero'),
+        (r"fn send<T:Send>() {} fn check() {send::<Port<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<Port<'static>>();}", 'Sync'),
+        (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
+    ])
+    def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, error):
+        command_file = BUILD / 'drivers/tty/serial/.bflb_uart.o.cmd'
+        if not command_file.is_file():
+            pytest.skip('build the console kernel before checking its public API')
+        command = shlex.split(command_file.read_text().splitlines()[0].split(':=', 1)[1])
+        compiler = command.index('rustc')
+        env = os.environ | {'RUSTC_BOOTSTRAP': '1'}
+        env.update(arg.split('=', 1) for arg in command[:compiler])
+        args, skip = [], False
+        for arg in command[compiler:]:
+            if skip:
+                skip = False
+                continue
+            if arg == '--out-dir':
+                skip = True
+            elif arg.startswith('--emit=') or arg.endswith('/bflb_uart.rs'):
+                continue
+            else:
+                args.append(arg)
+        source = tmp_path / 'api.rs'
+        source.write_text(API + body)
+        args += ['--crate-name=serial_api_check', '--emit=metadata', '-o', str(tmp_path / 'api.rmeta'), str(source)]
+        result = subprocess.run(args, cwd=BUILD, env=env, text=True, capture_output=True)
+        if error is None:
+>           assert result.returncode == 0, result.stderr
+E           AssertionError: error[E0514]: found crate `core` compiled by an incompatible version of rustc
+E               |
+E               = note: the following crate versions were found:
+E                       crate `core` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcore.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error: cannot resolve a prelude import
+E             
+E             error[E0514]: found crate `kernel` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b0/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `kernel` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libkernel.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error[E0425]: cannot find type `Option` in this scope
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b0/api.rs:8:61
+E               |
+E             8 |     fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+E               |                                                             ^^^^^^ not found in this scope
+E             
+E             error[E0425]: cannot find type `Result` in this scope
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b0/api.rs:11:64
+E                |
+E             11 | fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+E                |                                                                ^^^^^^ not found in this scope
+E             
+E             error[E0514]: found crate `compiler_builtins` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b0/api.rs:2:1
+E               |
+E             2 | #![allow(dead_code, unused_imports)]
+E               | ^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `compiler_builtins` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcompiler_builtins.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             warning: `extern crate` is not idiomatic in the new edition
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b0/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+E               = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+E             help: convert it to a `use`
+E               |
+E             3 - extern crate kernel;
+E             3 + use kernel;
+E               |
+E             
+E             error: requires `sized` lang_item
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b0/api.rs:11:64
+E                |
+E             11 | fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+E                |                                                                ^^^^^^^^^^
+E             
+E             error[E0425]: cannot find function, tuple struct or tuple variant `Ok` in this scope
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b0/api.rs:12:100
+E                |
+E             12 |         serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))
+E                |                                                                                                    ^^ not found in this scope
+E             
+E             error: aborting due to 8 previous errors; 1 warning emitted
+E             
+E             Some errors have detailed explanations: E0425, E0514.
+E             For more information about an error, try `rustc --explain E0425`.
+E             
+E           assert 1 == 0
+E            +  where 1 = CompletedProcess(args=['rustc', '--edition=2021', '-Zbinary_dep_depinfo=y', '-Astable_features', '-Aunused_features', ...errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n").returncode
+
+tests/test_serial_lifetime.py:178: AssertionError
+_ test_real_kernel_api_rejects_borrowed_or_escaping_state[struct Borrowed<'a>(&'a u32);\n    impl SerialOps for Borrowed<'_> {\n        fn tx_empty(&self,_:&Port<'_>)->bool {true}\n        fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}\n        fn console_write(&self,_:&Port<'_>,_:&[u8]) {}\n    }-lifetime] _
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b1')
+body = "struct Borrowed<'a>(&'a u32);\n    impl SerialOps for Borrowed<'_> {\n        fn tx_empty(&self,_:&Port<'_>)->bool {t..._:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}\n        fn console_write(&self,_:&Port<'_>,_:&[u8]) {}\n    }"
+error = 'lifetime'
+
+    @pytest.mark.parametrize(('body', 'error'), [
+        (r'''fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+            serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))
+        }''', None),
+        (r'''struct Borrowed<'a>(&'a u32);
+        impl SerialOps for Borrowed<'_> {
+            fn tx_empty(&self,_:&Port<'_>)->bool {true}
+            fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+            fn console_write(&self,_:&Port<'_>,_:&[u8]) {}
+        }''', 'lifetime'),
+        (r'''fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn relock(port:&Port<'_>) {port.with_lock(|_|());}''', 'private'),
+        (r'''fn emergency(port:&Port<'_>) {port.with_console_access(||());}''', 'private'),
+        (r'''fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}''', 'NonZero'),
+        (r"fn send<T:Send>() {} fn check() {send::<Port<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<Port<'static>>();}", 'Sync'),
+        (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
+    ])
+    def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, error):
+        command_file = BUILD / 'drivers/tty/serial/.bflb_uart.o.cmd'
+        if not command_file.is_file():
+            pytest.skip('build the console kernel before checking its public API')
+        command = shlex.split(command_file.read_text().splitlines()[0].split(':=', 1)[1])
+        compiler = command.index('rustc')
+        env = os.environ | {'RUSTC_BOOTSTRAP': '1'}
+        env.update(arg.split('=', 1) for arg in command[:compiler])
+        args, skip = [], False
+        for arg in command[compiler:]:
+            if skip:
+                skip = False
+                continue
+            if arg == '--out-dir':
+                skip = True
+            elif arg.startswith('--emit=') or arg.endswith('/bflb_uart.rs'):
+                continue
+            else:
+                args.append(arg)
+        source = tmp_path / 'api.rs'
+        source.write_text(API + body)
+        args += ['--crate-name=serial_api_check', '--emit=metadata', '-o', str(tmp_path / 'api.rmeta'), str(source)]
+        result = subprocess.run(args, cwd=BUILD, env=env, text=True, capture_output=True)
+        if error is None:
+            assert result.returncode == 0, result.stderr
+        else:
+            assert result.returncode != 0
+>           assert error in result.stderr, result.stderr
+E           AssertionError: error[E0514]: found crate `core` compiled by an incompatible version of rustc
+E               |
+E               = note: the following crate versions were found:
+E                       crate `core` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcore.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error: cannot resolve a prelude import
+E             
+E             error[E0514]: found crate `kernel` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b1/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `kernel` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libkernel.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error[E0425]: cannot find type `Option` in this scope
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b1/api.rs:8:61
+E               |
+E             8 |     fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+E               |                                                             ^^^^^^ not found in this scope
+E             
+E             error[E0425]: cannot find type `Option` in this scope
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b1/api.rs:14:65
+E                |
+E             14 |         fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+E                |                                                                 ^^^^^^ not found in this scope
+E             
+E             error[E0514]: found crate `compiler_builtins` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b1/api.rs:2:1
+E               |
+E             2 | #![allow(dead_code, unused_imports)]
+E               | ^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `compiler_builtins` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcompiler_builtins.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             warning: `extern crate` is not idiomatic in the new edition
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b1/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+E               = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+E             help: convert it to a `use`
+E               |
+E             3 - extern crate kernel;
+E             3 + use kernel;
+E               |
+E             
+E             error: aborting due to 6 previous errors; 1 warning emitted
+E             
+E             Some errors have detailed explanations: E0425, E0514.
+E             For more information about an error, try `rustc --explain E0425`.
+E             
+E           assert 'lifetime' in 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n'
+E            +  where 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n' = CompletedProcess(args=['rustc', '--edition=2021', '-Zbinary_dep_depinfo=y', '-Astable_features', '-Aunused_features', ...errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n").stderr
+
+tests/test_serial_lifetime.py:181: AssertionError
+_ test_real_kernel_api_rejects_borrowed_or_escaping_state[fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}-lifetime] _
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b2')
+body = "fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}"
+error = 'lifetime'
+
+    @pytest.mark.parametrize(('body', 'error'), [
+        (r'''fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+            serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))
+        }''', None),
+        (r'''struct Borrowed<'a>(&'a u32);
+        impl SerialOps for Borrowed<'_> {
+            fn tx_empty(&self,_:&Port<'_>)->bool {true}
+            fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+            fn console_write(&self,_:&Port<'_>,_:&[u8]) {}
+        }''', 'lifetime'),
+        (r'''fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn relock(port:&Port<'_>) {port.with_lock(|_|());}''', 'private'),
+        (r'''fn emergency(port:&Port<'_>) {port.with_console_access(||());}''', 'private'),
+        (r'''fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}''', 'NonZero'),
+        (r"fn send<T:Send>() {} fn check() {send::<Port<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<Port<'static>>();}", 'Sync'),
+        (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
+    ])
+    def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, error):
+        command_file = BUILD / 'drivers/tty/serial/.bflb_uart.o.cmd'
+        if not command_file.is_file():
+            pytest.skip('build the console kernel before checking its public API')
+        command = shlex.split(command_file.read_text().splitlines()[0].split(':=', 1)[1])
+        compiler = command.index('rustc')
+        env = os.environ | {'RUSTC_BOOTSTRAP': '1'}
+        env.update(arg.split('=', 1) for arg in command[:compiler])
+        args, skip = [], False
+        for arg in command[compiler:]:
+            if skip:
+                skip = False
+                continue
+            if arg == '--out-dir':
+                skip = True
+            elif arg.startswith('--emit=') or arg.endswith('/bflb_uart.rs'):
+                continue
+            else:
+                args.append(arg)
+        source = tmp_path / 'api.rs'
+        source.write_text(API + body)
+        args += ['--crate-name=serial_api_check', '--emit=metadata', '-o', str(tmp_path / 'api.rmeta'), str(source)]
+        result = subprocess.run(args, cwd=BUILD, env=env, text=True, capture_output=True)
+        if error is None:
+            assert result.returncode == 0, result.stderr
+        else:
+            assert result.returncode != 0
+>           assert error in result.stderr, result.stderr
+E           AssertionError: error[E0514]: found crate `core` compiled by an incompatible version of rustc
+E               |
+E               = note: the following crate versions were found:
+E                       crate `core` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcore.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error: cannot resolve a prelude import
+E             
+E             error[E0514]: found crate `kernel` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b2/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `kernel` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libkernel.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error[E0425]: cannot find type `Option` in this scope
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b2/api.rs:8:61
+E               |
+E             8 |     fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+E               |                                                             ^^^^^^ not found in this scope
+E             
+E             error[E0514]: found crate `compiler_builtins` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b2/api.rs:2:1
+E               |
+E             2 | #![allow(dead_code, unused_imports)]
+E               | ^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `compiler_builtins` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcompiler_builtins.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             warning: `extern crate` is not idiomatic in the new edition
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b2/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+E               = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+E             help: convert it to a `use`
+E               |
+E             3 - extern crate kernel;
+E             3 + use kernel;
+E               |
+E             
+E             error: requires `sized` lang_item
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b2/api.rs:11:28
+E                |
+E             11 | fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}
+E                |                            ^^^^^^^^^^^^^^^^^^^^^^
+E             
+E             error: aborting due to 6 previous errors; 1 warning emitted
+E             
+E             Some errors have detailed explanations: E0425, E0514.
+E             For more information about an error, try `rustc --explain E0425`.
+E             
+E           assert 'lifetime' in 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n'
+E            +  where 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n' = CompletedProcess(args=['rustc', '--edition=2021', '-Zbinary_dep_depinfo=y', '-Astable_features', '-Aunused_features', ...errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n").stderr
+
+tests/test_serial_lifetime.py:181: AssertionError
+_ test_real_kernel_api_rejects_borrowed_or_escaping_state[fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}-lifetime] _
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b3')
+body = "fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}"
+error = 'lifetime'
+
+    @pytest.mark.parametrize(('body', 'error'), [
+        (r'''fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+            serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))
+        }''', None),
+        (r'''struct Borrowed<'a>(&'a u32);
+        impl SerialOps for Borrowed<'_> {
+            fn tx_empty(&self,_:&Port<'_>)->bool {true}
+            fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+            fn console_write(&self,_:&Port<'_>,_:&[u8]) {}
+        }''', 'lifetime'),
+        (r'''fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn relock(port:&Port<'_>) {port.with_lock(|_|());}''', 'private'),
+        (r'''fn emergency(port:&Port<'_>) {port.with_console_access(||());}''', 'private'),
+        (r'''fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}''', 'NonZero'),
+        (r"fn send<T:Send>() {} fn check() {send::<Port<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<Port<'static>>();}", 'Sync'),
+        (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
+    ])
+    def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, error):
+        command_file = BUILD / 'drivers/tty/serial/.bflb_uart.o.cmd'
+        if not command_file.is_file():
+            pytest.skip('build the console kernel before checking its public API')
+        command = shlex.split(command_file.read_text().splitlines()[0].split(':=', 1)[1])
+        compiler = command.index('rustc')
+        env = os.environ | {'RUSTC_BOOTSTRAP': '1'}
+        env.update(arg.split('=', 1) for arg in command[:compiler])
+        args, skip = [], False
+        for arg in command[compiler:]:
+            if skip:
+                skip = False
+                continue
+            if arg == '--out-dir':
+                skip = True
+            elif arg.startswith('--emit=') or arg.endswith('/bflb_uart.rs'):
+                continue
+            else:
+                args.append(arg)
+        source = tmp_path / 'api.rs'
+        source.write_text(API + body)
+        args += ['--crate-name=serial_api_check', '--emit=metadata', '-o', str(tmp_path / 'api.rmeta'), str(source)]
+        result = subprocess.run(args, cwd=BUILD, env=env, text=True, capture_output=True)
+        if error is None:
+            assert result.returncode == 0, result.stderr
+        else:
+            assert result.returncode != 0
+>           assert error in result.stderr, result.stderr
+E           AssertionError: error[E0514]: found crate `core` compiled by an incompatible version of rustc
+E               |
+E               = note: the following crate versions were found:
+E                       crate `core` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcore.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error: cannot resolve a prelude import
+E             
+E             error[E0514]: found crate `kernel` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b3/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `kernel` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libkernel.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error[E0425]: cannot find type `Option` in this scope
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b3/api.rs:8:61
+E               |
+E             8 |     fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+E               |                                                             ^^^^^^ not found in this scope
+E             
+E             error[E0514]: found crate `compiler_builtins` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b3/api.rs:2:1
+E               |
+E             2 | #![allow(dead_code, unused_imports)]
+E               | ^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `compiler_builtins` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcompiler_builtins.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             warning: `extern crate` is not idiomatic in the new edition
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b3/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+E               = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+E             help: convert it to a `use`
+E               |
+E             3 - extern crate kernel;
+E             3 + use kernel;
+E               |
+E             
+E             error: requires `sized` lang_item
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b3/api.rs:11:34
+E                |
+E             11 | fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}
+E                |                                  ^^^^^^^^^^^^^^^^^^^^^^
+E             
+E             error: aborting due to 6 previous errors; 1 warning emitted
+E             
+E             Some errors have detailed explanations: E0425, E0514.
+E             For more information about an error, try `rustc --explain E0425`.
+E             
+E           assert 'lifetime' in 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n'
+E            +  where 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n' = CompletedProcess(args=['rustc', '--edition=2021', '-Zbinary_dep_depinfo=y', '-Astable_features', '-Aunused_features', ...errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n").stderr
+
+tests/test_serial_lifetime.py:181: AssertionError
+_ test_real_kernel_api_rejects_borrowed_or_escaping_state[fn relock(port:&Port<'_>) {port.with_lock(|_|());}-private] _
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b4')
+body = "fn relock(port:&Port<'_>) {port.with_lock(|_|());}", error = 'private'
+
+    @pytest.mark.parametrize(('body', 'error'), [
+        (r'''fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+            serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))
+        }''', None),
+        (r'''struct Borrowed<'a>(&'a u32);
+        impl SerialOps for Borrowed<'_> {
+            fn tx_empty(&self,_:&Port<'_>)->bool {true}
+            fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+            fn console_write(&self,_:&Port<'_>,_:&[u8]) {}
+        }''', 'lifetime'),
+        (r'''fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn relock(port:&Port<'_>) {port.with_lock(|_|());}''', 'private'),
+        (r'''fn emergency(port:&Port<'_>) {port.with_console_access(||());}''', 'private'),
+        (r'''fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}''', 'NonZero'),
+        (r"fn send<T:Send>() {} fn check() {send::<Port<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<Port<'static>>();}", 'Sync'),
+        (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
+    ])
+    def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, error):
+        command_file = BUILD / 'drivers/tty/serial/.bflb_uart.o.cmd'
+        if not command_file.is_file():
+            pytest.skip('build the console kernel before checking its public API')
+        command = shlex.split(command_file.read_text().splitlines()[0].split(':=', 1)[1])
+        compiler = command.index('rustc')
+        env = os.environ | {'RUSTC_BOOTSTRAP': '1'}
+        env.update(arg.split('=', 1) for arg in command[:compiler])
+        args, skip = [], False
+        for arg in command[compiler:]:
+            if skip:
+                skip = False
+                continue
+            if arg == '--out-dir':
+                skip = True
+            elif arg.startswith('--emit=') or arg.endswith('/bflb_uart.rs'):
+                continue
+            else:
+                args.append(arg)
+        source = tmp_path / 'api.rs'
+        source.write_text(API + body)
+        args += ['--crate-name=serial_api_check', '--emit=metadata', '-o', str(tmp_path / 'api.rmeta'), str(source)]
+        result = subprocess.run(args, cwd=BUILD, env=env, text=True, capture_output=True)
+        if error is None:
+            assert result.returncode == 0, result.stderr
+        else:
+            assert result.returncode != 0
+>           assert error in result.stderr, result.stderr
+E           AssertionError: error[E0514]: found crate `core` compiled by an incompatible version of rustc
+E               |
+E               = note: the following crate versions were found:
+E                       crate `core` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcore.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error: cannot resolve a prelude import
+E             
+E             error[E0514]: found crate `kernel` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b4/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `kernel` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libkernel.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error[E0425]: cannot find type `Option` in this scope
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b4/api.rs:8:61
+E               |
+E             8 |     fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+E               |                                                             ^^^^^^ not found in this scope
+E             
+E             error[E0514]: found crate `compiler_builtins` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b4/api.rs:2:1
+E               |
+E             2 | #![allow(dead_code, unused_imports)]
+E               | ^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `compiler_builtins` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcompiler_builtins.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             warning: `extern crate` is not idiomatic in the new edition
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b4/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+E               = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+E             help: convert it to a `use`
+E               |
+E             3 - extern crate kernel;
+E             3 + use kernel;
+E               |
+E             
+E             error: requires `sized` lang_item
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b4/api.rs:11:27
+E                |
+E             11 | fn relock(port:&Port<'_>) {port.with_lock(|_|());}
+E                |                           ^^^^^^^^^^^^^^^^^^^^^^^^
+E             
+E             error: aborting due to 6 previous errors; 1 warning emitted
+E             
+E             Some errors have detailed explanations: E0425, E0514.
+E             For more information about an error, try `rustc --explain E0425`.
+E             
+E           assert 'private' in 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n'
+E            +  where 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n' = CompletedProcess(args=['rustc', '--edition=2021', '-Zbinary_dep_depinfo=y', '-Astable_features', '-Aunused_features', ...errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n").stderr
+
+tests/test_serial_lifetime.py:181: AssertionError
+_ test_real_kernel_api_rejects_borrowed_or_escaping_state[fn emergency(port:&Port<'_>) {port.with_console_access(||());}-private] _
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b5')
+body = "fn emergency(port:&Port<'_>) {port.with_console_access(||());}"
+error = 'private'
+
+    @pytest.mark.parametrize(('body', 'error'), [
+        (r'''fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+            serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))
+        }''', None),
+        (r'''struct Borrowed<'a>(&'a u32);
+        impl SerialOps for Borrowed<'_> {
+            fn tx_empty(&self,_:&Port<'_>)->bool {true}
+            fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+            fn console_write(&self,_:&Port<'_>,_:&[u8]) {}
+        }''', 'lifetime'),
+        (r'''fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn relock(port:&Port<'_>) {port.with_lock(|_|());}''', 'private'),
+        (r'''fn emergency(port:&Port<'_>) {port.with_console_access(||());}''', 'private'),
+        (r'''fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}''', 'NonZero'),
+        (r"fn send<T:Send>() {} fn check() {send::<Port<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<Port<'static>>();}", 'Sync'),
+        (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
+    ])
+    def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, error):
+        command_file = BUILD / 'drivers/tty/serial/.bflb_uart.o.cmd'
+        if not command_file.is_file():
+            pytest.skip('build the console kernel before checking its public API')
+        command = shlex.split(command_file.read_text().splitlines()[0].split(':=', 1)[1])
+        compiler = command.index('rustc')
+        env = os.environ | {'RUSTC_BOOTSTRAP': '1'}
+        env.update(arg.split('=', 1) for arg in command[:compiler])
+        args, skip = [], False
+        for arg in command[compiler:]:
+            if skip:
+                skip = False
+                continue
+            if arg == '--out-dir':
+                skip = True
+            elif arg.startswith('--emit=') or arg.endswith('/bflb_uart.rs'):
+                continue
+            else:
+                args.append(arg)
+        source = tmp_path / 'api.rs'
+        source.write_text(API + body)
+        args += ['--crate-name=serial_api_check', '--emit=metadata', '-o', str(tmp_path / 'api.rmeta'), str(source)]
+        result = subprocess.run(args, cwd=BUILD, env=env, text=True, capture_output=True)
+        if error is None:
+            assert result.returncode == 0, result.stderr
+        else:
+            assert result.returncode != 0
+>           assert error in result.stderr, result.stderr
+E           AssertionError: error[E0514]: found crate `core` compiled by an incompatible version of rustc
+E               |
+E               = note: the following crate versions were found:
+E                       crate `core` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcore.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error: cannot resolve a prelude import
+E             
+E             error[E0514]: found crate `kernel` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b5/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `kernel` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libkernel.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error[E0425]: cannot find type `Option` in this scope
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b5/api.rs:8:61
+E               |
+E             8 |     fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+E               |                                                             ^^^^^^ not found in this scope
+E             
+E             error[E0514]: found crate `compiler_builtins` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b5/api.rs:2:1
+E               |
+E             2 | #![allow(dead_code, unused_imports)]
+E               | ^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `compiler_builtins` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcompiler_builtins.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             warning: `extern crate` is not idiomatic in the new edition
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b5/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+E               = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+E             help: convert it to a `use`
+E               |
+E             3 - extern crate kernel;
+E             3 + use kernel;
+E               |
+E             
+E             error: requires `sized` lang_item
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b5/api.rs:11:30
+E                |
+E             11 | fn emergency(port:&Port<'_>) {port.with_console_access(||());}
+E                |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             
+E             error: aborting due to 6 previous errors; 1 warning emitted
+E             
+E             Some errors have detailed explanations: E0425, E0514.
+E             For more information about an error, try `rustc --explain E0425`.
+E             
+E           assert 'private' in 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n'
+E            +  where 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n' = CompletedProcess(args=['rustc', '--edition=2021', '-Zbinary_dep_depinfo=y', '-Astable_features', '-Aunused_features', ...errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n").stderr
+
+tests/test_serial_lifetime.py:181: AssertionError
+_ test_real_kernel_api_rejects_borrowed_or_escaping_state[fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}-NonZero] _
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b6')
+body = "fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}"
+error = 'NonZero'
+
+    @pytest.mark.parametrize(('body', 'error'), [
+        (r'''fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {
+            serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))
+        }''', None),
+        (r'''struct Borrowed<'a>(&'a u32);
+        impl SerialOps for Borrowed<'_> {
+            fn tx_empty(&self,_:&Port<'_>)->bool {true}
+            fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+            fn console_write(&self,_:&Port<'_>,_:&[u8]) {}
+        }''', 'lifetime'),
+        (r'''fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}''', 'lifetime'),
+        (r'''fn relock(port:&Port<'_>) {port.with_lock(|_|());}''', 'private'),
+        (r'''fn emergency(port:&Port<'_>) {port.with_console_access(||());}''', 'private'),
+        (r'''fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}''', 'NonZero'),
+        (r"fn send<T:Send>() {} fn check() {send::<Port<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<Port<'static>>();}", 'Sync'),
+        (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
+        (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
+    ])
+    def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, error):
+        command_file = BUILD / 'drivers/tty/serial/.bflb_uart.o.cmd'
+        if not command_file.is_file():
+            pytest.skip('build the console kernel before checking its public API')
+        command = shlex.split(command_file.read_text().splitlines()[0].split(':=', 1)[1])
+        compiler = command.index('rustc')
+        env = os.environ | {'RUSTC_BOOTSTRAP': '1'}
+        env.update(arg.split('=', 1) for arg in command[:compiler])
+        args, skip = [], False
+        for arg in command[compiler:]:
+            if skip:
+                skip = False
+                continue
+            if arg == '--out-dir':
+                skip = True
+            elif arg.startswith('--emit=') or arg.endswith('/bflb_uart.rs'):
+                continue
+            else:
+                args.append(arg)
+        source = tmp_path / 'api.rs'
+        source.write_text(API + body)
+        args += ['--crate-name=serial_api_check', '--emit=metadata', '-o', str(tmp_path / 'api.rmeta'), str(source)]
+        result = subprocess.run(args, cwd=BUILD, env=env, text=True, capture_output=True)
+        if error is None:
+            assert result.returncode == 0, result.stderr
+        else:
+            assert result.returncode != 0
+>           assert error in result.stderr, result.stderr
+E           AssertionError: error[E0514]: found crate `core` compiled by an incompatible version of rustc
+E               |
+E               = note: the following crate versions were found:
+E                       crate `core` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcore.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error: cannot resolve a prelude import
+E             
+E             error[E0514]: found crate `kernel` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b6/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `kernel` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libkernel.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             error[E0425]: cannot find type `Option` in this scope
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b6/api.rs:8:61
+E               |
+E             8 |     fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}
+E               |                                                             ^^^^^^ not found in this scope
+E             
+E             error[E0514]: found crate `compiler_builtins` compiled by an incompatible version of rustc
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b6/api.rs:2:1
+E               |
+E             2 | #![allow(dead_code, unused_imports)]
+E               | ^
+E               |
+E               = note: the following crate versions were found:
+E                       crate `compiler_builtins` compiled by rustc 1.98.1 (48a229cea 2026-09-01): ./rust/libcompiler_builtins.rmeta
+E               = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+E             
+E             warning: `extern crate` is not idiomatic in the new edition
+E              --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b6/api.rs:3:1
+E               |
+E             3 | extern crate kernel;
+E               | ^^^^^^^^^^^^^^^^^^^^
+E               |
+E               = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+E               = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+E             help: convert it to a `use`
+E               |
+E             3 - extern crate kernel;
+E             3 + use kernel;
+E               |
+E             
+E             error: requires `sized` lang_item
+E               --> /tmp/pytest-of-kwang/pytest-0/test_real_kernel_api_rejects_b6/api.rs:11:59
+E                |
+E             11 | fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}
+E                |                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             
+E             error: aborting due to 6 previous errors; 1 warning emitted
+E             
+E             Some errors have detailed explanations: E0425, E0514.
+E             For more information about an error, try `rustc --explain E0425`.
+E             
+E           assert 'NonZero' in 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n'
+E            +  where 'error[E0514]: found crate `core` compiled by an incompatible version of rustc\n  |\n  = note: the following crate ver... errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n' = CompletedProcess(args=['rustc', '--edition=2021', '-Zbinary_dep_depinfo=y', '-Astable_features', '-Aunused_features', ...errors have detailed explanations: E0425, E0514.\nFor more information about an error, try `rustc --explain E0425`.\n").stderr
+
+tests/test_serial_lifetime.py:181: AssertionError
+________ test_actual_emergency_access_does_not_unlock_a_failed_trylock _________
+
+tmp_path = PosixPath('/tmp/pytest-of-kwang/pytest-0/test_actual_emergency_access_d0')
+
+    def test_actual_emergency_access_does_not_unlock_a_failed_trylock(tmp_path):
+        if not TREE.is_dir():
+            pytest.skip('optional console worktree is absent')
+        source = (TREE / 'rust/kernel/serial.rs').read_text()
+        console = (TREE / 'rust/kernel/serial/console.rs').read_text()
+        access = function(console, 'fn with_console_access<')
+>       guard = function(source, 'struct PortGuard {')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_serial_lifetime.py:190: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+source = '// SPDX-License-Identifier: GPL-2.0\n\n//! Serial-core support for memory-mapped, two-wire polling consoles.\n//!\n//...ART lock does not prevent resource revocation.\n    pub fn device(&self) -> &Device {\n        self.device\n    }\n}\n'
+signature = 'struct PortGuard {'
+
+    def function(source, signature):
+>       start = source.index(signature)
+                ^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: substring not found
+
+tests/test_serial_lifetime.py:16: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_serial_lifetime.py::test_actual_registration_rolls_back_after_devres_failure
+FAILED tests/test_serial_lifetime.py::test_real_kernel_api_rejects_borrowed_or_escaping_state[fn register(driver:Arc<Driver<Hardware>>, dev:&Device<Bound>)->Result<()> {\n        serial::register_port(driver,dev,PortConfig {line:3,mapbase:0,clock:40000000,fifo_size:32},Ok(Hardware))\n    }-None]
+FAILED tests/test_serial_lifetime.py::test_real_kernel_api_rejects_borrowed_or_escaping_state[struct Borrowed<'a>(&'a u32);\n    impl SerialOps for Borrowed<'_> {\n        fn tx_empty(&self,_:&Port<'_>)->bool {true}\n        fn set_termios(&self,_:&LockedPort<'_>,_:&mut Termios,_:Option<&Termios>) {}\n        fn console_write(&self,_:&Port<'_>,_:&[u8]) {}\n    }-lifetime]
+FAILED tests/test_serial_lifetime.py::test_real_kernel_api_rejects_borrowed_or_escaping_state[fn escape(port:&Port<'_>)->&'static Device<Bound> {port.device()}-lifetime]
+FAILED tests/test_serial_lifetime.py::test_real_kernel_api_rejects_borrowed_or_escaping_state[fn escape(port:&LockedPort<'_>)->&'static Device<Bound> {port.device()}-lifetime]
+FAILED tests/test_serial_lifetime.py::test_real_kernel_api_rejects_borrowed_or_escaping_state[fn relock(port:&Port<'_>) {port.with_lock(|_|());}-private]
+FAILED tests/test_serial_lifetime.py::test_real_kernel_api_rejects_borrowed_or_escaping_state[fn emergency(port:&Port<'_>) {port.with_console_access(||());}-private]
+FAILED tests/test_serial_lifetime.py::test_real_kernel_api_rejects_borrowed_or_escaping_state[fn zero_baud(locked:&LockedPort<'_>,termios:&mut Termios) {locked.configure(termios,0);}-NonZero]
+FAILED tests/test_serial_lifetime.py::test_actual_emergency_access_does_not_unlock_a_failed_trylock
+========================= 9 failed, 24 passed in 2.82s =========================

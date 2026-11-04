@@ -1,0 +1,188 @@
+make: Entering directory '/home/kwang/Documents/imager/out/linux-console-v2-validation'
+make[1]: Entering directory '/home/kwang/Documents/imager/out/console-v2-review/clippy'
+  UPD     arch/riscv/include/generated/uapi/asm/errno.h
+  UPD     arch/riscv/include/generated/uapi/asm/fcntl.h
+  UPD     arch/riscv/include/generated/uapi/asm/ioctl.h
+  UPD     arch/riscv/include/generated/uapi/asm/ioctls.h
+  UPD     arch/riscv/include/generated/uapi/asm/ipcbuf.h
+  UPD     arch/riscv/include/generated/uapi/asm/mman.h
+  UPD     arch/riscv/include/generated/uapi/asm/msgbuf.h
+  UPD     arch/riscv/include/generated/uapi/asm/param.h
+  UPD     arch/riscv/include/generated/uapi/asm/poll.h
+  UPD     arch/riscv/include/generated/uapi/asm/posix_types.h
+  UPD     arch/riscv/include/generated/uapi/asm/resource.h
+  UPD     arch/riscv/include/generated/uapi/asm/sembuf.h
+  UPD     arch/riscv/include/generated/uapi/asm/shmbuf.h
+  UPD     arch/riscv/include/generated/uapi/asm/siginfo.h
+  UPD     arch/riscv/include/generated/uapi/asm/signal.h
+  UPD     arch/riscv/include/generated/uapi/asm/socket.h
+  UPD     include/config/kernel.release
+  UPD     arch/riscv/include/generated/uapi/asm/sockios.h
+  UPD     include/generated/uapi/linux/version.h
+  UPD     arch/riscv/include/generated/uapi/asm/stat.h
+  UPD     arch/riscv/include/generated/uapi/asm/statfs.h
+  UPD     arch/riscv/include/generated/uapi/asm/swab.h
+  UPD     include/generated/utsrelease.h
+  UPD     arch/riscv/include/generated/uapi/asm/termbits.h
+  UPD     arch/riscv/include/generated/uapi/asm/termios.h
+  UPD     arch/riscv/include/generated/uapi/asm/types.h
+  SYSHDR  arch/riscv/include/generated/uapi/asm/unistd_32.h
+  SYSHDR  arch/riscv/include/generated/uapi/asm/unistd_64.h
+  UPD     include/generated/compile.h
+  HOSTCC  scripts/dtc/dtc.o
+  UPD     arch/riscv/include/generated/asm/early_ioremap.h
+  UPD     arch/riscv/include/generated/asm/flat.h
+  UPD     arch/riscv/include/generated/asm/fprobe.h
+  UPD     arch/riscv/include/generated/asm/kvm_para.h
+  UPD     arch/riscv/include/generated/asm/mmzone.h
+  UPD     arch/riscv/include/generated/asm/mcs_spinlock.h
+  UPD     arch/riscv/include/generated/asm/parport.h
+  UPD     arch/riscv/include/generated/asm/spinlock_types.h
+  UPD     arch/riscv/include/generated/asm/ticket_spinlock.h
+  UPD     arch/riscv/include/generated/asm/qrwlock.h
+  UPD     arch/riscv/include/generated/asm/qrwlock_types.h
+  UPD     arch/riscv/include/generated/asm/qspinlock.h
+  UPD     arch/riscv/include/generated/asm/ring_buffer.h
+  UPD     arch/riscv/include/generated/asm/user.h
+  HOSTCC  scripts/dtc/flattree.o
+  UPD     arch/riscv/include/generated/asm/vmlinux.lds.h
+  UPD     arch/riscv/include/generated/asm/device.h
+  UPD     arch/riscv/include/generated/asm/div64.h
+  UPD     arch/riscv/include/generated/asm/dma-mapping.h
+  UPD     arch/riscv/include/generated/asm/dma.h
+  UPD     arch/riscv/include/generated/asm/emergency-restart.h
+  UPD     arch/riscv/include/generated/asm/hardirq.h
+  UPD     arch/riscv/include/generated/asm/hw_irq.h
+  UPD     arch/riscv/include/generated/asm/irq_regs.h
+  UPD     arch/riscv/include/generated/asm/kmap_size.h
+  UPD     arch/riscv/include/generated/asm/local.h
+  UPD     arch/riscv/include/generated/asm/local64.h
+  UPD     arch/riscv/include/generated/asm/msi.h
+  UPD     arch/riscv/include/generated/asm/percpu.h
+  UPD     arch/riscv/include/generated/asm/percpu_types.h
+  UPD     arch/riscv/include/generated/asm/preempt.h
+  UPD     arch/riscv/include/generated/asm/rqspinlock.h
+  UPD     arch/riscv/include/generated/asm/rwonce.h
+  UPD     arch/riscv/include/generated/asm/serial.h
+  UPD     arch/riscv/include/generated/asm/shmparam.h
+  UPD     arch/riscv/include/generated/asm/softirq_stack.h
+  UPD     arch/riscv/include/generated/asm/trace_clock.h
+  UPD     arch/riscv/include/generated/asm/unwind_user.h
+  UPD     arch/riscv/include/generated/asm/vdso/vsyscall.h
+  UPD     arch/riscv/include/generated/asm/vga.h
+  UPD     arch/riscv/include/generated/asm/video.h
+  SYSTBL  arch/riscv/include/generated/asm/syscall_table_32.h
+  SYSTBL  arch/riscv/include/generated/asm/syscall_table_64.h
+  HOSTCC  scripts/dtc/fstree.o
+  HOSTCC  scripts/dtc/data.o
+  HOSTCC  scripts/dtc/livetree.o
+  HOSTCC  scripts/dtc/treesource.o
+  HOSTCC  scripts/dtc/srcpos.o
+  HOSTCC  scripts/dtc/checks.o
+  HOSTCC  scripts/dtc/util.o
+  LEX     scripts/dtc/dtc-lexer.lex.c
+  YACC    scripts/dtc/dtc-parser.tab.[ch]
+  HOSTCC  scripts/dtc/libfdt/fdt.o
+  HOSTCC  scripts/dtc/libfdt/fdt_ro.o
+  HOSTCC  scripts/dtc/libfdt/fdt_wip.o
+  HOSTCC  scripts/dtc/libfdt/fdt_sw.o
+  HOSTCC  scripts/dtc/libfdt/fdt_rw.o
+  HOSTCC  scripts/dtc/libfdt/fdt_strerror.o
+  HOSTCC  scripts/dtc/libfdt/fdt_empty_tree.o
+  HOSTCC  scripts/dtc/libfdt/fdt_addresses.o
+  HOSTCC  scripts/dtc/libfdt/fdt_overlay.o
+  HOSTCC  scripts/dtc/fdtoverlay.o
+  HOSTCC  scripts/dtc/dtc-lexer.lex.o
+  HOSTCC  scripts/dtc/dtc-parser.tab.o
+  HOSTLD  scripts/dtc/fdtoverlay
+  HOSTLD  scripts/dtc/dtc
+  HOSTCC  scripts/gen_init_cpio
+  HOSTCC  scripts/kallsyms.o
+  HOSTCC  scripts/kallsyms-sysmap.o
+  HOSTCC  scripts/elf-parse.o
+  HOSTCC  scripts/sorttable.o
+  HOSTCC  scripts/asn1_compiler
+  HOSTLD  scripts/kallsyms
+  HOSTLD  scripts/sorttable
+  CC      scripts/mod/empty.o
+  HOSTCC  scripts/mod/mk_elfconfig
+  CC      scripts/mod/devicetable-offsets.s
+  UPD     scripts/mod/devicetable-offsets.h
+  MKELF   scripts/mod/elfconfig.h
+  HOSTCC  scripts/mod/modpost.o
+  HOSTCC  scripts/mod/file2alias.o
+  HOSTCC  scripts/mod/sumversion.o
+  HOSTCC  scripts/mod/symsearch.o
+  HOSTLD  scripts/mod/modpost
+  CC      kernel/bounds.s
+  UPD     include/generated/timeconst.h
+  CHKSHA1 /home/kwang/Documents/imager/out/linux-console-v2-validation/include/linux/atomic/atomic-arch-fallback.h
+  CHKSHA1 /home/kwang/Documents/imager/out/linux-console-v2-validation/include/linux/atomic/atomic-instrumented.h
+  CHKSHA1 /home/kwang/Documents/imager/out/linux-console-v2-validation/include/linux/atomic/atomic-long.h
+  UPD     include/generated/bounds.h
+  CC      arch/riscv/kernel/asm-offsets.s
+  UPD     include/generated/asm-offsets.h
+  CC      kernel/sched/rq-offsets.s
+  UPD     include/generated/rq-offsets.h
+  CALL    /home/kwang/Documents/imager/out/linux-console-v2-validation/scripts/checksyscalls.sh 
+  LDS     arch/riscv/kernel/vdso/vdso.lds
+  AS      arch/riscv/kernel/vdso/rt_sigreturn.o
+  CC      arch/riscv/kernel/vdso/vgettimeofday.o
+  AS      arch/riscv/kernel/vdso/getcpu.o
+  AS      arch/riscv/kernel/vdso/flush_icache.o
+  CC      arch/riscv/kernel/vdso/hwprobe.o
+  AS      arch/riscv/kernel/vdso/sys_hwprobe.o
+  CC      arch/riscv/kernel/vdso/getrandom.o
+  AS      arch/riscv/kernel/vdso/note.o
+  AS      arch/riscv/kernel/vdso/vgetrandom-chacha.o
+  VDSOLD  arch/riscv/kernel/vdso/vdso.so.dbg
+  VDSOSYM include/generated/vdso-offsets.h
+  LDS     arch/riscv/kernel/compat_vdso/compat_vdso.lds
+  VDSOAS  arch/riscv/kernel/compat_vdso/rt_sigreturn.o
+  VDSOAS  arch/riscv/kernel/compat_vdso/getcpu.o
+  VDSOAS  arch/riscv/kernel/compat_vdso/flush_icache.o
+  VDSOAS  arch/riscv/kernel/compat_vdso/note.o
+  VDSOLD  arch/riscv/kernel/compat_vdso/compat_vdso.so.dbg
+  VDSOSYM include/generated/compat_vdso-offsets.h
+  RUSTC L rust/core.o
+  CC      rust/helpers/helpers.o
+  BINDGEN rust/bindings/bindings_generated.rs
+  BINDGEN rust/bindings/bindings_helpers_generated.rs
+  RUSTC PL rust/host/libproc_macro2.rlib
+  BINDGEN rust/uapi/uapi_generated.rs
+  RSCPP     rust/kernel/generated_arch_static_branch_asm.rs
+  RSCPP     rust/kernel/generated_arch_warn_asm.rs
+  RSCPP     rust/kernel/generated_arch_reachable_asm.rs
+  EXPORTS rust/exports_core_generated.h
+  EXPORTS rust/exports_helpers_generated.h
+  CLIPPY L rust/compiler_builtins.o
+  RUSTC PL rust/host/libquote.rlib
+  CLIPPY L rust/build_error.o
+  RUSTC L rust/zerocopy.o
+  CLIPPY L rust/ffi.o
+  RUSTC PL rust/host/libsyn.rlib
+  CLIPPY P rust/libpin_init_internal.so
+  CLIPPY P rust/libmacros.so
+  RUSTC P rust/libzerocopy_derive.so
+  CLIPPY L rust/pin_init.o
+  CLIPPY L rust/bindings.o
+  CLIPPY L rust/uapi.o
+  EXPORTS rust/exports_bindings_generated.h
+  CLIPPY L rust/kernel.o
+warning: associated function `from_raw` is never used
+   --> /home/kwang/Documents/imager/out/linux-console-v2-validation/rust/kernel/io/resource.rs:246:25
+    |
+222 | impl Flags {
+    | ---------- associated function in this implementation
+...
+246 |     pub(crate) const fn from_raw(value: c_ulong) -> Self {
+    |                         ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: 1 warning emitted
+
+  EXPORTS rust/exports_kernel_generated.h
+  CLIPPY     drivers/tty/serial/bflb_uart.o
+make[1]: Leaving directory '/home/kwang/Documents/imager/out/console-v2-review/clippy'
+make: Leaving directory '/home/kwang/Documents/imager/out/linux-console-v2-validation'

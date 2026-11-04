@@ -1,0 +1,8 @@
+make[1]: Entering directory '/home/kwang/Documents/imager/out/console-dts-v2/submission'
+  SCHEMA  Documentation/devicetree/bindings/processed-schema.json
+  CHKDT   /home/kwang/Documents/imager/out/linux-console-dts/Documentation/devicetree/bindings
+  LINT    /home/kwang/Documents/imager/out/linux-console-dts/Documentation/devicetree/bindings
+  STYLE   /home/kwang/Documents/imager/out/linux-console-dts/Documentation/devicetree/bindings
+  DTEX    Documentation/devicetree/bindings/serial/bouffalolab,bl808-uart.example.dts
+  DTC [C] Documentation/devicetree/bindings/serial/bouffalolab,bl808-uart.example.dtb
+make[1]: Leaving directory '/home/kwang/Documents/imager/out/console-dts-v2/submission'
