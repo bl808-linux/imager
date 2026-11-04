@@ -175,7 +175,6 @@ int main(void)
         ssize_t gone = read(held, &ch, 1);
         if (gone != 0 && !(gone < 0 && errno == EIO)) fail("hung-up FD read");
         close(held);
-        emit("HELD_FD_CLOSED %d", i);
 		int reset_fd = open("/sys/bus/platform/devices/30007000.reset-controller/test", O_WRONLY);
 		int reset_errno = 0;
 		if (reset_fd < 0) {
@@ -200,6 +199,7 @@ int main(void)
         if ((uart[0x84 / 4] & 0x3fff) != 32 || (uart[0x80 / 4] & 3)) fail("FIFO not initialized");
         munmap((void *)uart, 4096); close(mem);
         emit("FIFO_INIT_OK %d", i);
+        emit("HELD_FD_CLOSED %d", i);
         int reopened = open("/dev/" SMOKE_TTY, O_RDWR | O_NOCTTY | O_NONBLOCK);
         if (reopened < 0) fail("reopen after rebind");
         if (write(reopened, "TTY_REBIND_OK\n", 14) != 14 || tcdrain(reopened)) fail("rebind TX");
