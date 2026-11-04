@@ -1,0 +1,26 @@
+Checking patches using:
+  /home/kwang/Documents/imager/out/linux-console/scripts/checkpatch.pl -q --terse --no-summary --mailback --showfile
+---
+[32m●[0m 71271dc8a082: dt-bindings: vendor-prefixes: Add Bouffalo Lab
+[32m●[0m 1ae98589fa83: dt-bindings: interrupt-controller: Add BL808 PLIC
+[32m●[0m 54b2e74e3575: dt-bindings: timer: Add BL808 CLINT
+[31m●[0m 560e87cc5c8e: dt-bindings: riscv: Add Bouffalo Lab BL808
+  [31m●[0m checkpatch.pl: Documentation/devicetree/bindings/riscv/bouffalolab.yaml:6: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[31m●[0m 8bdaf620eac6: dt-bindings: serial: Add BL808 UART
+  [31m●[0m checkpatch.pl: Documentation/devicetree/bindings/serial/bouffalolab,bl808-uart.yaml:6: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[32m●[0m 1aa1b39115ce: rust: of: Add device tree alias lookup
+[31m●[0m c43521e31288: rust: serial: Add built-in UART and console support
+  [31m●[0m checkpatch.pl: rust/helpers/serial.c:103: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[31m●[0m dc9dc221305b: serial: bflb: Add Rust BL808 UART driver
+  [31m●[0m checkpatch.pl: drivers/tty/serial/Kconfig:29: WARNING: please write a help paragraph that fully describes the config symbol with at least 4 lines
+  [31m●[0m checkpatch.pl: drivers/tty/serial/bflb_uart.rs:103: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[31m●[0m 39c01db5df15: riscv: Add Bouffalo Lab SoC selection
+  [31m●[0m checkpatch.pl: arch/riscv/Kconfig.socs:15: WARNING: please write a help paragraph that fully describes the config symbol with at least 4 lines
+[31m●[0m a0ca950238bc: riscv: dts: bouffalolab: Add BL808 SoC
+  [31m●[0m checkpatch.pl: arch/riscv/boot/dts/bouffalolab/bl808.dtsi:5: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[31m●[0m 882c83298d97: riscv: dts: bouffalolab: Add Sipeed M1s Dock
+  [31m●[0m checkpatch.pl: arch/riscv/boot/dts/bouffalolab/Makefile:8: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[32m●[0m 93d2f9cf9424: riscv: defconfig: Enable Bouffalo Lab SoCs
+[32m●[0m 2491aa1dcefd: MAINTAINERS: Add Bouffalo Lab BL808 support
+---
+Success: 6, Warning: 8, Error: 0

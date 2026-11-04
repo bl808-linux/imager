@@ -1,0 +1,7 @@
+make: Entering directory '/home/kwang/Documents/imager/out/linux-console-dts'
+make[1]: Entering directory '/home/kwang/Documents/imager/out/console-dts-v2/submission'
+  SYNC    include/config/auto.conf
+  UPD     include/config/kernel.release
+  DTC [C] arch/riscv/boot/dts/bouffalolab/bl808-sipeed-m1s-dock.dtb
+make[1]: Leaving directory '/home/kwang/Documents/imager/out/console-dts-v2/submission'
+make: Leaving directory '/home/kwang/Documents/imager/out/linux-console-dts'
