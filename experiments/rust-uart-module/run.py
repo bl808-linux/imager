@@ -51,7 +51,7 @@ if args.action == 'assemble':
     (args.artifacts / 'initramfs.cpio.gz').write_bytes(gzip.compress(archive, mtime=0))
     for name in ['bl808_uart.ko','initramfs.cpio.gz']:
         data = (args.artifacts / name).read_bytes()
-        result['files'][name] = {'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+        result['files'][name] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
     (args.artifacts / 'artifacts.json').write_text(json.dumps(result, indent=2) + '\n')
 else:
     if args.output is None:
