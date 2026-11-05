@@ -18,7 +18,7 @@ BUILD = Path(os.environ.get('BL808_SERIAL_BUILD', ROOT / 'out/linux-console-kuni
 API = r'''
 #![allow(dead_code, unused_imports)]
 extern crate kernel;
-use kernel::{prelude::*,serial::{self,Driver,Port,PortConfig,SerialOps,Termios,LockedPort},device::{Device,Bound},sync::Arc};
+use kernel::{prelude::*,serial::{self,DriverRegistration,Driver,Port,PortConfig,SerialOps,Termios,LockedPort},device::{Device,Bound},sync::Arc};
 struct Hardware;
 impl SerialOps for Hardware {
     fn tx_empty(&self,_:&Port<'_>)->bool {true}
@@ -47,13 +47,13 @@ impl SerialOps for Hardware {
     (r"fn sync<T:Sync>() {} fn check() {sync::<Port<'static>>();}", 'Sync'),
     (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
     (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
-    (r'''fn built_in(module:&'static kernel::ThisModule)->Result<Arc<Driver<Hardware>>> {
-        Driver::register_builtin(serial::DriverConfig {name:c"api_test",device_name:c"ttyApi",ports:4,default_baud:115200},module)
+    (r'''fn built_in(module:&'static kernel::ThisModule)->Result<DriverRegistration<Hardware>> {
+        DriverRegistration::new(serial::DriverConfig {name:c"api_test",device_name:c"ttyApi",ports:4,default_baud:115200},module)
     }''', None),
-    (r'''fn dynamic(module:&'static kernel::ThisModule) { let _=Driver::<Hardware>::new(serial::DriverConfig {name:c"api_test",device_name:c"ttyApi",ports:4,default_baud:115200},module); }''', 'private'),
+    (r'''fn dynamic(module:&'static kernel::ThisModule) { let _=Driver::<Hardware>::register_builtin(serial::DriverConfig {name:c"api_test",device_name:c"ttyApi",ports:4,default_baud:115200},module); }''', 'register_builtin'),
 ])
 def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, error):
-    command_file = BUILD / 'drivers/tty/serial/.bflb_uart.o.cmd'
+    command_file = BUILD / 'drivers/tty/serial/.bl808_uart.o.cmd'
     if not command_file.is_file():
         pytest.skip('build the console kernel before checking its public API')
     command = shlex.split(command_file.read_text().splitlines()[0].split(':=', 1)[1])
@@ -67,7 +67,7 @@ def test_real_kernel_api_rejects_borrowed_or_escaping_state(tmp_path, body, erro
             continue
         if arg == '--out-dir':
             skip = True
-        elif arg.startswith('--emit=') or arg.endswith('/bflb_uart.rs'):
+        elif arg.startswith('--emit=') or arg.endswith('/bl808_uart.rs'):
             continue
         else:
             args.append(arg)

@@ -2,6 +2,8 @@
 
 Build the images with `uv run imager`.
 
+- [UART module lifetime validation](experiments/rust-uart-module/README.md)
+
 - [Rust UART TTY and IRQ validation](experiments/rust-uart-tty/README.md)
 
 - [Rust console v2 review integration](experiments/rust-console-v2-review/README.md)
