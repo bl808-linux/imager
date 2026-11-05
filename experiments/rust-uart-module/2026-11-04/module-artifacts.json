@@ -1,0 +1,58 @@
+{
+  "tag": "18c6187af19f494a",
+  "source": "/home/kwang/Documents/imager/out/linux-console-v2-validation",
+  "commit": "bc1b99598935e4d8243877293892f03a6d31a4a7",
+  "tty": "ttyBFLB3",
+  "platform_address": "30002000",
+  "tree": "36ef29e24ac34665861d078d4beb314651287da7",
+  "status": "",
+  "kunit": true,
+  "files": {
+    "config": {
+      "bytes": 119214,
+      "sha256": "e8fe99627fcf80f7a6567231643946543b00d5f68352425a3fadf0d807033c58"
+    },
+    "init": {
+      "bytes": 567304,
+      "sha256": "dc6153a8aa73e6d2c6b49f23fbb75a3720c580bfc910827b410acb95b234fa3e"
+    },
+    "initramfs.cpio.gz": {
+      "bytes": 1510899,
+      "sha256": "97d88b74a23e7624b3034b714ca7038e8e35ff4a24a30ab0dcca88a765244c59"
+    },
+    "busybox": {
+      "bytes": 1852184,
+      "sha256": "40529b477f2bad76dc6de37ae0a000da09d0b807cb940a9e8da30418859192f5"
+    },
+    "source.patch": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "Image.gz": {
+      "bytes": 4497850,
+      "sha256": "20f94799401ff46dcc64dd9964c2f064e712fe5ccc560e7e27234f1c74b4348c"
+    },
+    "uart-test.dtb": {
+      "bytes": 2135,
+      "sha256": "9f4a0dc0129b4d78ae6e024d2fa63293747540ae9909913024d3fbab32787fd7"
+    },
+    "initramfs.list": {
+      "bytes": 299,
+      "sha256": "2b96e7733cca75c2e5bf9dab9c5b85d486b8b6e96b38d0f0c313d19677a8cb97"
+    },
+    "bl808_uart.ko": {
+      "bytes": 41880,
+      "sha256": "17a3aede1ef158d8e039d572ed3e113593475d575d09bd51e08a96031b32d481"
+    }
+  },
+  "harness": {
+    "smoke.py": {
+      "bytes": 14399,
+      "sha256": "e872ea99df27fb58f2c511195fada7c65afb4d5081ecfd21c3eaa012219bca31"
+    },
+    "init.c": {
+      "bytes": 9287,
+      "sha256": "5f61f44518e456cbb9699fb58e9572b5a47c7a4d0c87034ca807aa4a2b479aa0"
+    }
+  }
+}

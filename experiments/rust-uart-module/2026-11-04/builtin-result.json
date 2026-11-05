@@ -1,0 +1,268 @@
+{
+  "pass": true,
+  "mode": "handoff",
+  "commands": [
+    {
+      "mode": "uboot",
+      "command": "bdinfo",
+      "reply": "bdinfo\nboot_params = 0x0000000000000000\nDRAM bank   = 0x0000000000000000\n-> start    = 0x0000000050000000\n-> size     = 0x0000000004000000\nflashstart  = 0x0000000000000000\nflashsize   = 0x0000000000000000\nflashoffset = 0x0000000000000000\nbaudrate    = 115200 bps\nrelocaddr   = 0x0000000053fc1000\nreloc off   = 0x0000000003fc1000\nBuild       = 64-bit\nfdt_blob    = 0x0000000053da0720\nlmb_dump_all:\n memory.count = 0x1\n memory[0]\t[0x50000000-0x53ffffff], 0x4000000 bytes, flags: none\n reserved.count = 0x1\n reserved[0]\t[0x52da0710-0x53ffffff], 0x125f8f0 bytes, flags: no-overwrite\ndevicetree  = board\nboot hart   = 0x0000000000000000\nfirmware fdt= 0x0000000051ff8000\n=> ",
+      "rc": 0,
+      "seconds": 0.187
+    },
+    {
+      "mode": "uboot",
+      "command": "help",
+      "reply": "help\n?         - alias for 'help'\n[         - alias for 'test'\nbase      - print or set address offset\nbdinfo    - print Board Info structure\nblkcache  - block cache diagnostics and control\nboot      - boot default, i.e., run 'bootcmd'\nbootd     - boot default, i.e., run 'bootcmd'\nbootelf   - Boot from an ELF image in memory\nbooti     - boot Linux kernel 'Image' format from memory\nbootm     - boot application image from memory\nbootvx    - Boot vxWorks from an ELF image\ncmp       - memory compare\nconinfo   - print console devices and information\ncp        - memory copy\ncpu       - display information about CPUs\ncrc32     - checksum calculation\ndm        - Driver model low level access\necho      - echo args to console\neditenv   - edit environment variable\nenv       - environment handling commands\nexit      - exit script\nfalse     - do nothing, unsuccessfully\nfdt       - flattened device tree utility commands\ngo        - start application at address 'addr'\ngzwrite   - unzip and write memory to block device\nhelp      - print command description/usage\niminfo    - print header information for application image\nimxtract  - extract a part of a multi-image\nitest     - return true/false on integer compare\nloadb     - load binary file over serial line (kermit mode)\nloads     - load S-Record file over serial line\nloadx     - load binary file over serial line (xmodem mode)\nloady     - load binary file over serial line (ymodem mode)\nloop      - infinite loop on address range\nlzmadec   - lzma uncompress a memory region\nmd        - memory display\nmm        - memory modify (auto-incrementing address)\nmw        - memory write (fill)\nnm        - memory modify (constant address)\npanic     - Panic with optional message\nprintenv  - print environment variables\nrandom    - fill memory with random pattern\nreset     - Perform RESET of the CPU\nrun       - run commands in an environment variable\nsetenv    - set environment variables\nsetexpr   - set environment variable as the result of eval expression\nshowvar   - print local hushshell variables\nsleep     - delay execution for some time\nsource    - run script from memory\ntest      - minimal test like /bin/sh\ntrue      - do nothing, successfully\nunlz4     - lz4 uncompress a memory region\nunzip     - unzip a memory region\nversion   - print monitor, compiler and linker version\n=> ",
+      "rc": 0,
+      "seconds": 0.33
+    },
+    {
+      "mode": "uboot",
+      "command": "mw.b 50100000 0 10000",
+      "reply": "mw.b 50100000 0 10000\n=> ",
+      "rc": 0,
+      "seconds": 0.167
+    },
+    {
+      "mode": "uboot",
+      "command": "crc32 50100000 578",
+      "reply": "crc32 50100000 578\nCRC32 for 50100000 ... 50100577 ==> 2103a9b7\n=> ",
+      "rc": 0,
+      "seconds": 0.161
+    },
+    {
+      "mode": "uboot",
+      "command": "mw.l 5010fff0 52600000",
+      "reply": "mw.l 5010fff0 52600000\n=> ",
+      "rc": 0,
+      "seconds": 0.171
+    },
+    {
+      "mode": "uboot",
+      "command": "mw.l 5010fff4 857",
+      "reply": "mw.l 5010fff4 857\n=> ",
+      "rc": 0,
+      "seconds": 0.162
+    },
+    {
+      "mode": "uboot",
+      "command": "crc32 52600000 857",
+      "reply": "crc32 52600000 857\nCRC32 for 52600000 ... 52600856 ==> b6cec512\n=> ",
+      "rc": 0,
+      "seconds": 0.162
+    },
+    {
+      "mode": "uboot",
+      "command": "printenv baudrate",
+      "reply": "printenv baudrate\nbaudrate=1000000\n=> ",
+      "rc": 0,
+      "seconds": 0.161
+    },
+    {
+      "mode": "uboot",
+      "command": "mw.l 5010fff0 52000000",
+      "reply": "mw.l 5010fff0 52000000\n=> ",
+      "rc": 0,
+      "seconds": 0.172
+    },
+    {
+      "mode": "uboot",
+      "command": "mw.l 5010fff4 44c2d7",
+      "reply": "mw.l 5010fff4 44c2d7\n=> ",
+      "rc": 0,
+      "seconds": 0.167
+    },
+    {
+      "mode": "uboot",
+      "command": "crc32 52000000 44c2d7",
+      "reply": "crc32 52000000 44c2d7\nCRC32 for 52000000 ... 5244c2d6 ==> a627ed91\n=> ",
+      "rc": 0,
+      "seconds": 1.228
+    },
+    {
+      "mode": "uboot",
+      "command": "mw.l 5010fff0 52700000",
+      "reply": "mw.l 5010fff0 52700000\n=> ",
+      "rc": 0,
+      "seconds": 0.176
+    },
+    {
+      "mode": "uboot",
+      "command": "mw.l 5010fff4 16da57",
+      "reply": "mw.l 5010fff4 16da57\n=> ",
+      "rc": 0,
+      "seconds": 0.171
+    },
+    {
+      "mode": "uboot",
+      "command": "crc32 52700000 16da57",
+      "reply": "crc32 52700000 16da57\nCRC32 for 52700000 ... 5286da56 ==> 7f68f65d\n=> ",
+      "rc": 0,
+      "seconds": 0.525
+    },
+    {
+      "mode": "uboot",
+      "command": "printenv baudrate",
+      "reply": "printenv baudrate\nbaudrate=115200\n=> ",
+      "rc": 0,
+      "seconds": 0.164
+    },
+    {
+      "mode": "uboot",
+      "command": "unzip 52000000 50200000 1800000",
+      "reply": "unzip 52000000 50200000 1800000\nUncompressed size: 17786368 = 0x10F6600\n=> ",
+      "rc": 0,
+      "seconds": 5.265
+    },
+    {
+      "mode": "uboot",
+      "command": "fdt addr 52600000 10000",
+      "reply": "fdt addr 52600000 10000\nWorking FDT set to 52600000\n=> ",
+      "rc": 0,
+      "seconds": 0.179
+    },
+    {
+      "mode": "uboot",
+      "command": "setenv bootargs earlycon=sbi console=ttyBFLB3,115200n8 printk.devkmsg=on rdinit=/init",
+      "reply": "setenv bootargs earlycon=sbi console=ttyBFLB3,115200n8 printk.devkmsg=on rdinit=/init\n=> ",
+      "rc": 0,
+      "seconds": 0.33
+    }
+  ],
+  "build": {
+    "tag": "2a422f64090d2a2e",
+    "source": "/home/kwang/Documents/imager/out/linux-console-v2-validation",
+    "commit": "bc1b99598935e4d8243877293892f03a6d31a4a7",
+    "tty": "ttyBFLB3",
+    "platform_address": "30002000",
+    "tree": "36ef29e24ac34665861d078d4beb314651287da7",
+    "status": "",
+    "kunit": true,
+    "files": {
+      "config": {
+        "bytes": 119214,
+        "sha256": "7fe2dcb45a7e00c5113eef98a40cadcd8828541ee825754b7bfd4c09f7fbd32b"
+      },
+      "init": {
+        "bytes": 567032,
+        "sha256": "3b2c9254f8d3f9968f1cc91a8efc3e88a7631949a66bf3e8b5f59adb8eb8c796"
+      },
+      "initramfs.cpio.gz": {
+        "bytes": 1497687,
+        "sha256": "936e4de5f45c813447a51f2104c0d2d4f0f576aee55661277ae217be24d0aa63"
+      },
+      "busybox": {
+        "bytes": 1852184,
+        "sha256": "40529b477f2bad76dc6de37ae0a000da09d0b807cb940a9e8da30418859192f5"
+      },
+      "source.patch": {
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "Image.gz": {
+        "bytes": 4506327,
+        "sha256": "f8771530adb50b30e4aeceb32b7154107aaa0d5d2f42f4096d23618641589905"
+      },
+      "uart-test.dtb": {
+        "bytes": 2135,
+        "sha256": "9f4a0dc0129b4d78ae6e024d2fa63293747540ae9909913024d3fbab32787fd7"
+      },
+      "initramfs.list": {
+        "bytes": 301,
+        "sha256": "96863107f3ffdd93f374e3c309f69f9f3f434168b19555dcca1d8ef50364ec48"
+      }
+    },
+    "harness": {
+      "smoke.py": {
+        "bytes": 14399,
+        "sha256": "e872ea99df27fb58f2c511195fada7c65afb4d5081ecfd21c3eaa012219bca31"
+      },
+      "init-builtin.c": {
+        "bytes": 8220,
+        "sha256": "f8cc4fb5d8926ce565a63c16682d4b9a0d4fa9417df863ae1673b82cb83af45b"
+      }
+    }
+  },
+  "artifacts": {
+    "Image.gz": {
+      "bytes": 4506327,
+      "sha256": "f8771530adb50b30e4aeceb32b7154107aaa0d5d2f42f4096d23618641589905"
+    },
+    "uart-test.dtb": {
+      "bytes": 2135,
+      "sha256": "9f4a0dc0129b4d78ae6e024d2fa63293747540ae9909913024d3fbab32787fd7"
+    },
+    "initramfs.cpio.gz": {
+      "bytes": 1497687,
+      "sha256": "936e4de5f45c813447a51f2104c0d2d4f0f576aee55661277ae217be24d0aa63"
+    }
+  },
+  "run_harness": {
+    "smoke.py": {
+      "bytes": 14399,
+      "sha256": "e872ea99df27fb58f2c511195fada7c65afb4d5081ecfd21c3eaa012219bca31"
+    },
+    "init-builtin.c": {
+      "bytes": 8220,
+      "sha256": "f8cc4fb5d8926ce565a63c16682d4b9a0d4fa9417df863ae1673b82cb83af45b"
+    }
+  },
+  "sd_files": [],
+  "receiver_sha256": "6fc3308e7ea652f194a921d097647961712496e5a56c4df7e2db736aec48815a",
+  "uploads": [
+    {
+      "file": "out/rust-uart-module/artifacts-builtin/uart-test.dtb",
+      "address": "0x52600000",
+      "bytes": 2135,
+      "sha256": "9f4a0dc0129b4d78ae6e024d2fa63293747540ae9909913024d3fbab32787fd7",
+      "crc32": "b6cec512",
+      "transport": "bounded RAM UART receiver",
+      "reply": "\nRAM_RX_DONE\n## Application terminated, rc = 0x0\n=> ",
+      "seconds": 0.402
+    },
+    {
+      "file": "out/rust-uart-module/artifacts-builtin/Image.gz",
+      "address": "0x52000000",
+      "bytes": 4506327,
+      "sha256": "f8771530adb50b30e4aeceb32b7154107aaa0d5d2f42f4096d23618641589905",
+      "crc32": "a627ed91",
+      "transport": "bounded RAM UART receiver",
+      "reply": "\nRAM_RX_DONE\n## Application terminated, rc = 0x0\n=> ",
+      "seconds": 54.178
+    },
+    {
+      "file": "out/rust-uart-module/artifacts-builtin/initramfs.cpio.gz",
+      "address": "0x52700000",
+      "bytes": 1497687,
+      "sha256": "936e4de5f45c813447a51f2104c0d2d4f0f576aee55661277ae217be24d0aa63",
+      "crc32": "7f68f65d",
+      "transport": "bounded RAM UART receiver",
+      "reply": "\nRAM_RX_DONE\n## Application terminated, rc = 0x0\n=> ",
+      "seconds": 18.154
+    }
+  ],
+  "upload_baud_changes": [
+    {
+      "from": 115200,
+      "to": 1000000
+    },
+    {
+      "from": 1000000,
+      "to": 115200
+    }
+  ],
+  "validation": {
+    "reset_cycles": 8,
+    "records": 32,
+    "unbind_rebind_cycles": 8,
+    "timer_before": 10831,
+    "timer_after": 11729,
+    "kunit": true
+  },
+  "tty_tx_exact": true,
+  "tty_rx": true,
+  "fifo_cycles": true,
+  "held_fd_cycles": true,
+  "module_cycles": null,
+  "build_mode": "builtin"
+}

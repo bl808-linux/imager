@@ -1,0 +1,74 @@
+make: Entering directory '/home/kwang/Documents/imager/out/linux-console-v2-validation'
+make[1]: Entering directory '/home/kwang/Documents/imager/out/linux-console-kunit-build'
+  SYNC    include/config/auto.conf
+  UPD     include/config/kernel.release
+  UPD     include/generated/utsrelease.h
+  CC      rust/helpers/helpers.o
+  BINDGEN rust/bindings/bindings_helpers_generated.rs
+  EXPORTS rust/exports_helpers_generated.h
+  RUSTC L rust/bindings.o
+  EXPORTS rust/exports_bindings_generated.h
+  RUSTC L rust/kernel.o
+warning: associated function `from_raw` is never used
+   --> /home/kwang/Documents/imager/out/linux-console-v2-validation/rust/kernel/io/resource.rs:246:25
+    |
+222 | impl Flags {
+    | ---------- associated function in this implementation
+...
+246 |     pub(crate) const fn from_raw(value: c_ulong) -> Self {
+    |                         ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: 1 warning emitted
+
+  EXPORTS rust/exports_kernel_generated.h
+  CC      init/version.o
+  CC      kernel/sys.o
+  AR      init/built-in.a
+  CC      rust/exports.o
+  AR      rust/built-in.a
+  CC      kernel/module/main.o
+  CC      drivers/tty/serial/bl808_reset_validation.o
+  CC      drivers/base/firmware_loader/main.o
+  AR      drivers/tty/serial/built-in.a
+  AR      drivers/tty/built-in.a
+  AR      drivers/base/firmware_loader/built-in.a
+  AR      kernel/module/built-in.a
+  AR      drivers/base/built-in.a
+  AR      kernel/built-in.a
+  CC      drivers/firmware/efi/libstub/bli.o
+  STUBCPY drivers/firmware/efi/libstub/bli.stub.o
+  AR      drivers/firmware/efi/libstub/lib.a
+  AR      drivers/built-in.a
+  AR      built-in.a
+  AR      built-in-fixup.a
+  COPY    vmlinux.a
+  LD      vmlinux.o
+  MODPOST vmlinux.symvers
+  UPD     include/generated/utsversion.h
+  CC      init/version-timestamp.o
+  KSYMS   .tmp_vmlinux0.kallsyms.S
+  AS      .tmp_vmlinux0.kallsyms.o
+  LD      .tmp_vmlinux1
+  KSYMS   .tmp_vmlinux1.kallsyms.S
+  AS      .tmp_vmlinux1.kallsyms.o
+  LD      .tmp_vmlinux2
+  KSYMS   .tmp_vmlinux2.kallsyms.S
+  AS      .tmp_vmlinux2.kallsyms.o
+  LD      vmlinux.unstripped
+  SYSMAP  System.map
+  SORTTAB vmlinux.unstripped
+  OBJCOPY vmlinux
+  GEN     modules.builtin.modinfo
+  GEN     modules.builtin
+  OBJCOPY arch/riscv/boot/Image
+  Kernel: arch/riscv/boot/Image is ready
+  GZIP    arch/riscv/boot/Image.gz
+  Kernel: arch/riscv/boot/Image.gz is ready
+  RUSTC [M] drivers/tty/serial/bl808_uart.o
+  MODPOST Module.symvers
+  CC [M]  .module-common.o
+  LD [M]  drivers/tty/serial/bl808_uart.ko
+make[1]: Leaving directory '/home/kwang/Documents/imager/out/linux-console-kunit-build'
+make: Leaving directory '/home/kwang/Documents/imager/out/linux-console-v2-validation'

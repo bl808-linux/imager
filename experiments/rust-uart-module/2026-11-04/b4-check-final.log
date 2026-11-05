@@ -1,0 +1,26 @@
+Checking patches using:
+  /home/kwang/Documents/imager/out/linux-console/scripts/checkpatch.pl -q --terse --no-summary --mailback --showfile
+---
+[32m●[0m 0a621797cb8e: dt-bindings: vendor-prefixes: Add Bouffalo Lab
+[32m●[0m a44336998c2b: dt-bindings: interrupt-controller: Add BL808 PLIC
+[32m●[0m 96ac6f3c5daf: dt-bindings: timer: Add BL808 CLINT
+[31m●[0m 1fb8bc2b85c4: dt-bindings: riscv: Add Bouffalo Lab BL808
+  [31m●[0m checkpatch.pl: Documentation/devicetree/bindings/riscv/bouffalolab.yaml:6: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[31m●[0m c899449e2711: dt-bindings: serial: Add BL808 UART
+  [31m●[0m checkpatch.pl: Documentation/devicetree/bindings/serial/bouffalolab,bl808-uart.yaml:6: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[32m●[0m 3f4294407e12: rust: of: Add device tree alias lookup
+[31m●[0m 1b6026f08ff0: rust: serial: Add UART and console support
+  [31m●[0m checkpatch.pl: :2: WARNING: Prefer a maximum 75 chars per line (possible unwrapped commit description?)
+  [31m●[0m checkpatch.pl: rust/helpers/serial.c:103: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[31m●[0m cd9b4192fc5a: serial: bflb: Add Rust BL808 UART driver
+  [31m●[0m checkpatch.pl: drivers/tty/serial/bl808_uart.rs:103: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[31m●[0m 291c7e0fca5b: riscv: Add Bouffalo Lab SoC selection
+  [31m●[0m checkpatch.pl: arch/riscv/Kconfig.socs:15: WARNING: please write a help paragraph that fully describes the config symbol with at least 4 lines
+[31m●[0m f6bfc721a877: riscv: dts: bouffalolab: Add BL808 SoC
+  [31m●[0m checkpatch.pl: arch/riscv/boot/dts/bouffalolab/bl808.dtsi:5: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[31m●[0m 36dbf35f428d: riscv: dts: bouffalolab: Add Sipeed M1s Dock
+  [31m●[0m checkpatch.pl: arch/riscv/boot/dts/bouffalolab/Makefile:8: WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?
+[32m●[0m e6d6f3e77b77: riscv: defconfig: Enable Bouffalo Lab SoCs
+[32m●[0m 94bb423e0b7b: MAINTAINERS: Add Bouffalo Lab BL808 support
+---
+Success: 6, Warning: 8, Error: 0

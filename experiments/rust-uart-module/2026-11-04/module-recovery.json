@@ -1,0 +1,24 @@
+{
+  "pass": true,
+  "commands": [
+    {
+      "mode": "uboot",
+      "command": "version",
+      "reply": "version\nU-Boot 2027.01-rc1-ge1ac65236b9a (Oct 28 2026 - 08:44:03 -0400)\n\nriscv64-linux-gnu-gcc (Debian 14.2.0-19) 14.2.0\nGNU ld (GNU Binutils for Debian) 2.44\n=> ",
+      "rc": 0,
+      "seconds": 0.136
+    },
+    {
+      "mode": "uboot",
+      "command": "md.l 30007044 1",
+      "reply": "md.l 30007044 1\n30007044: 00000000                             ....\n=> ",
+      "rc": 0,
+      "seconds": 0.167
+    }
+  ],
+  "m0_before": "4d305553020001000e00000000000000",
+  "boot": "\nOpenSBI v1.9-73-g6ad246a1\n   ____                    _____ ____ _____\n  / __ \\                  / ____|  _ \\_   _|\n | |  | |_ __   ___ _ __ | (___ | |_) || |\n | |  | | '_ \\ / _ \\ '_ \\ \\___ \\|  _ < | |\n | |__| | |_) |  __/ | | |____) | |_) || |_\n  \\____/| .__/ \\___|_| |_|_____/|____/_____|\n        | |\n        |_|\n\nPlatform Name               : Sipeed M1s Dock (BL808 D0)\nPlatform Features           : medeleg\nPlatform HART Count         : 1\nPlatform HART Protection    : pmp\nPlatform IPI Device         : aclint-mswi\nPlatform Timer Device       : aclint-mtimer @ 842105Hz\nPlatform Console Device     : bl808_uart\nPlatform HSM Device         : ---\nPlatform PMU Device         : ---\nPlatform Reboot Device      : ---\nPlatform Shutdown Device    : ---\nPlatform Suspend Device     : ---\nPlatform CPPC Device        : ---\nFirmware Base               : 0x3ef80000\nFirmware Size               : 344 KB\nFirmware RW Offset          : 0x40000\nFirmware RW Size            : 88 KB\nFirmware Heap Offset        : 0x46000\nFirmware Heap Size          : 64 KB (total), 0 KB (reserved), 14 KB (used), 48 KB (free)\nFirmware Scratch Size       : 4096 B (total), 496 B (used), 3600 B (free)\nRuntime SBI Version         : 3.0\nStandard SBI Extensions     : time,rfnc,ipi,base,hsm,pmu,dbcn,fwft,legacy,dbtr,sse\nExperimental SBI Extensions : none\n\nDomain0 Name                : root\nDomain0 Init Order          : 0xffffffff\nDomain0 Boot HART           : 0\nDomain0 HARTs               : 0x0*\nDomain0 Region00            : 0x000000003efc0000-0x000000003efdffff M: (F,R,W) S/U: ()\nDomain0 Region01            : 0x000000003ef80000-0x000000003efbffff M: (F,R,X) S/U: ()\nDomain0 Region02            : 0x0000000030002000-0x0000000030002fff M: (I,R,W) S/U: (R,W)\nDomain0 Region03            : 0x00000000e4008000-0x00000000e400bfff M: (I,R,W) S/U: ()\nDomain0 Region04            : 0x00000000e4000000-0x00000000e4007fff M: (I,R,W) S/U: ()\nDomain0 Region05            : 0x00000000e0000000-0x00000000e3ffffff M: (I,R,W) S/U: (R,W)\nDomain0 Region06            : 0x0000000000000000-0xffffffffffffffff M: () S/U: (R,W,X)\nDomain0 Next Address        : 0x0000000050000000\nDomain0 Next Arg1           : 0x0000000051ff8000\nDomain0 Next Mode           : S-mode\nDomain0 SysReset            : yes\nDomain0 SysSuspend          : yes\n\nBoot HART ID                : 0\nBoot HART Domain            : root\nBoot HART Priv Version      : v1.11\nBoot HART Base ISA          : rv64imafdcvx\nBoot HART ISA Extensions    : zicntr,zihpm,sdtrig\nBoot HART PMP Count         : 8\nBoot HART PMP Granularity   : 12 bits\nBoot HART PMP Address Bits  : 38\nBoot HART MHPM Info         : 8 (0x000007f8)\nBoot HART Debug Triggers    : 6 triggers\nBoot HART MIDELEG           : 0x0000000000000222\nBoot HART MEDELEG           : 0x000000000000b109\n\n\nU-Boot 2027.01-rc1-ge1ac65236b9a (Oct 28 2026 - 08:44:03 -0400)\n\nDRAM:  64 MiB\nCore:  6 devices, 5 uclasses, devicetree: board\nLoading Environment from nowhere...Loading Environment from nowhere... OK\nIn:    serial@30002000\nOut:   serial@30002000\nErr:   serial@30002000\n=> ",
+  "version": "version\nU-Boot 2027.01-rc1-ge1ac65236b9a (Oct 28 2026 - 08:44:03 -0400)\n\nriscv64-linux-gnu-gcc (Debian 14.2.0-19) 14.2.0\nGNU ld (GNU Binutils for Debian) 2.44\n=> ",
+  "reset_register": "md.l 30007044 1\n30007044: 00000000                             ....\n=> ",
+  "m0_after": "4d305553020001000e00000000000000"
+}

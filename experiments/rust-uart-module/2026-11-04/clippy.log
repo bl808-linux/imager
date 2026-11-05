@@ -1,0 +1,28 @@
+make: Entering directory '/home/kwang/Documents/imager/out/linux-console-v2-validation'
+make[1]: Entering directory '/home/kwang/Documents/imager/out/console-v2-review/clippy'
+  SYNC    include/config/auto.conf
+  UPD     include/config/kernel.release
+  UPD     include/generated/utsrelease.h
+  CC      rust/helpers/helpers.o
+  BINDGEN rust/bindings/bindings_helpers_generated.rs
+  EXPORTS rust/exports_helpers_generated.h
+  CLIPPY L rust/bindings.o
+  EXPORTS rust/exports_bindings_generated.h
+  CLIPPY L rust/kernel.o
+warning: associated function `from_raw` is never used
+   --> /home/kwang/Documents/imager/out/linux-console-v2-validation/rust/kernel/io/resource.rs:246:25
+    |
+222 | impl Flags {
+    | ---------- associated function in this implementation
+...
+246 |     pub(crate) const fn from_raw(value: c_ulong) -> Self {
+    |                         ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: 1 warning emitted
+
+  EXPORTS rust/exports_kernel_generated.h
+  CLIPPY [M] drivers/tty/serial/bl808_uart.o
+make[1]: Leaving directory '/home/kwang/Documents/imager/out/console-v2-review/clippy'
+make: Leaving directory '/home/kwang/Documents/imager/out/linux-console-v2-validation'

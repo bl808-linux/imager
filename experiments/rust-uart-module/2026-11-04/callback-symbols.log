@@ -1,0 +1,5 @@
+ffffffff802abc18 T rust_serial_install_hooks
+ffffffff802abcaa T rust_serial_stop_admission
+ffffffff802abdf0 T rust_serial_tty_cleanup
+ffffffff802abd0e T rust_serial_tty_install
+ffffffff802abce6 T rust_serial_unregister_state

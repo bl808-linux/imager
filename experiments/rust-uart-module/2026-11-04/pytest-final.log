@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/kwang/Documents/imager
+configfile: pyproject.toml
+collected 33 items
+
+tests/test_debian.py ..                                                  [  6%]
+tests/test_sd.py ......                                                  [ 24%]
+tests/test_sd_cli.py ............                                        [ 60%]
+tests/test_serial_lifetime.py .............                              [100%]
+
+============================== 33 passed in 1.77s ==============================
