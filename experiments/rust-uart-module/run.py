@@ -84,8 +84,9 @@ else:
     result['tty_rx'] = 'TTY_RX_OK 4096' in text
     result['fifo_cycles'] = all(f'FIFO_INIT_OK {i}' in text for i in range(8))
     result['held_fd_cycles'] = all(f'HELD_FD_CLOSED {i}' in text for i in range(8))
-    result['module_cycles'] = args.builtin or all(f'MODULE_RELOADED {i}' in text for i in range(8))
-    result['pass'] = result['module_cycles'] and result['pass'] and all(result[k] for k in ['tty_tx_exact', 'tty_rx', 'fifo_cycles', 'held_fd_cycles'])
+    result['module_cycles'] = None if args.builtin else all(f'MODULE_RELOADED {i}' in text for i in range(8))
+    result['build_mode'] = 'builtin' if args.builtin else 'module'
+    result['pass'] = (args.builtin or result['module_cycles']) and result['pass'] and all(result[k] for k in ['tty_tx_exact', 'tty_rx', 'fifo_cycles', 'held_fd_cycles'])
     (args.output / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
     if not result['pass']:
         raise RuntimeError('TTY validation failed')
