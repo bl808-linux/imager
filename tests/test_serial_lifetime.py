@@ -48,7 +48,7 @@ impl SerialOps for Hardware {
     (r"fn send<T:Send>() {} fn check() {send::<LockedPort<'static>>();}", 'Send'),
     (r"fn sync<T:Sync>() {} fn check() {sync::<LockedPort<'static>>();}", 'Sync'),
     (r'''fn built_in(module:&'static kernel::ThisModule)->Result<DriverRegistration<Hardware>> {
-        DriverRegistration::new(serial::DriverConfig {name:c"api_test",device_name:c"ttyApi",ports:4,default_baud:115200},module)
+        unsafe { DriverRegistration::new(serial::DriverConfig {name:c"api_test",device_name:c"ttyApi",ports:4,default_baud:115200},module) }
     }''', None),
     (r'''fn dynamic(module:&'static kernel::ThisModule) { let _=Driver::<Hardware>::register_builtin(serial::DriverConfig {name:c"api_test",device_name:c"ttyApi",ports:4,default_baud:115200},module); }''', 'register_builtin'),
 ])

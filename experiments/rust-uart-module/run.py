@@ -39,20 +39,23 @@ parser.add_argument('--build', type=Path, default=ROOT / 'out/linux-console-kuni
 parser.add_argument('--source', type=Path, default=ROOT / 'out/linux-console-v2-validation')
 parser.add_argument('--artifacts', type=Path, required=True)
 parser.add_argument('--output', type=Path)
+parser.add_argument('--builtin', action='store_true')
 args = parser.parse_args()
+if args.builtin: smoke.RESET_INIT = HERE / 'init-builtin.c'
 if args.action == 'assemble':
     result = smoke.assemble(args.build, args.source, args.artifacts, tty='ttyBFLB3')
-    module = args.artifacts / 'bl808_uart.ko'
-    shutil.copy2(args.build / 'drivers/tty/serial/bl808_uart.ko', module)
-    subprocess.run(['riscv64-linux-gnu-strip', '--strip-debug', str(module)], check=True)
-    listing = args.artifacts / 'initramfs.list'
-    listing.write_text(listing.read_text() + f'file /bl808_uart.ko {module.resolve()} 0644 0 0\n')
-    archive = subprocess.check_output([str(args.build / 'usr/gen_init_cpio') if (args.build / 'usr/gen_init_cpio').exists() else str(args.build / 'scripts/gen_init_cpio'), str(listing)])
-    (args.artifacts / 'initramfs.cpio.gz').write_bytes(gzip.compress(archive, mtime=0))
-    for name in ['bl808_uart.ko','initramfs.cpio.gz']:
-        data = (args.artifacts / name).read_bytes()
-        result['files'][name] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
-    (args.artifacts / 'artifacts.json').write_text(json.dumps(result, indent=2) + '\n')
+    if not args.builtin:
+        module = args.artifacts / 'bl808_uart.ko'
+        shutil.copy2(args.build / 'drivers/tty/serial/bl808_uart.ko', module)
+        subprocess.run(['riscv64-linux-gnu-strip', '--strip-debug', str(module)], check=True)
+        listing = args.artifacts / 'initramfs.list'
+        listing.write_text(listing.read_text() + f'file /bl808_uart.ko {module.resolve()} 0644 0 0\n')
+        archive = subprocess.check_output([str(args.build / 'usr/gen_init_cpio') if (args.build / 'usr/gen_init_cpio').exists() else str(args.build / 'scripts/gen_init_cpio'), str(listing)])
+        (args.artifacts / 'initramfs.cpio.gz').write_bytes(gzip.compress(archive, mtime=0))
+        for name in ['bl808_uart.ko','initramfs.cpio.gz']:
+            data = (args.artifacts / name).read_bytes()
+            result['files'][name] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+        (args.artifacts / 'artifacts.json').write_text(json.dumps(result, indent=2) + '\n')
 else:
     if args.output is None:
         parser.error('run requires --output')
@@ -81,7 +84,7 @@ else:
     result['tty_rx'] = 'TTY_RX_OK 4096' in text
     result['fifo_cycles'] = all(f'FIFO_INIT_OK {i}' in text for i in range(8))
     result['held_fd_cycles'] = all(f'HELD_FD_CLOSED {i}' in text for i in range(8))
-    result['module_cycles'] = all(f'MODULE_RELOADED {i}' in text for i in range(8))
+    result['module_cycles'] = args.builtin or all(f'MODULE_RELOADED {i}' in text for i in range(8))
     result['pass'] = result['module_cycles'] and result['pass'] and all(result[k] for k in ['tty_tx_exact', 'tty_rx', 'fifo_cycles', 'held_fd_cycles'])
     (args.output / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
     if not result['pass']:
